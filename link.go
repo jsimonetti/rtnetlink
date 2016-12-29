@@ -2,7 +2,11 @@ package rtnetlink
 
 import (
 	"errors"
+	"fmt"
+	"local/rtnetlink/netlink"
 	"net"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -43,22 +47,36 @@ type LinkMessage struct {
 	Attributes *LinkAttributes
 }
 
-const linkMessageLength = 12
+const linkMessageLength = 8
 
 // MarshalBinary marshals a LinkMessage into a byte slice.
 func (m LinkMessage) MarshalBinary() ([]byte, error) {
-	return nil, nil
+	b := make([]byte, linkMessageLength)
+
+	b[0] = 0
+	b[4] = 255
+	b[5] = 255
+	b[6] = 255
+	b[7] = 255
+
+	return b, nil
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
+	m.Family = b[0]
+	m.Type = b[1]
+	m.Index = b[2]
+	m.Flags = b[3]
+	fmt.Printf("unmarshal: %#v\n", b)
+	spew.Dump(b)
 	return nil
 }
 
 // rtMessage is an empty method to sattisfy the Message interface.
-func (m *LinkMessage) rtMessage() {}
+func (LinkMessage) rtMessage() {}
 
-// LinkService is used to retrieve generic netlink family information.
+// LinkService is used to retrieve rtnetlink family information.
 type LinkService struct {
 	c *Conn
 }
@@ -74,8 +92,22 @@ func (l *LinkService) Delete(ifIndex int) error {
 }
 
 // Get retrieves interface information by index.
-func (l *LinkService) Get(ifIndex int) (LinkMessage, error) {
+func (l *LinkService) Get(ifIndex uint8) (LinkMessage, error) {
 	return LinkMessage{}, nil
+}
+
+// List retrieves all interfaces.
+func (l *LinkService) List() ([]LinkMessage, error) {
+	req := LinkMessage{}
+
+	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
+	msgs, err := l.c.Execute(req, 18, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	// Last message indicates end of multi-part message, so trim it
+	return buildLinkMessages(msgs[:len(msgs)-1])
 }
 
 // Set sets interface attributes according to the LinkMessage information.
@@ -130,4 +162,10 @@ type LinkStats struct {
 
 		__u64   rx_nohandler;           // dropped, no handler found
 	*/
+}
+
+func buildLinkMessages(msgs []Message) ([]LinkMessage, error) {
+	links := make([]LinkMessage, 0, len(msgs))
+
+	return links, nil
 }
