@@ -66,13 +66,24 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
-	m.Family = nlenc.Uint16(b[0:0])
-	m.Type = nlenc.Uint16(b[2:3])
-	m.Index = nlenc.Uint32(b[4:7])
-	m.Flags = nlenc.Uint32(b[8:11])
-	m.Change = nlenc.Uint32(b[12:15])
+	m.Family = nlenc.Uint16(b[0:2])
+	m.Type = nlenc.Uint16(b[2:4])
+	m.Index = nlenc.Uint32(b[4:8])
+	m.Flags = nlenc.Uint32(b[8:12])
+	m.Change = nlenc.Uint32(b[12:16])
 	//fmt.Printf("unmarshal: %#v\n", b)
 	spew.Dump(b)
+
+	if len(b) > 16 {
+		la := &LinkAttributes{}
+		err := la.UnmarshalBinary(b[16:])
+		if err != nil {
+			return err
+		}
+
+		m.Attributes = la
+	}
+
 	return nil
 }
 
@@ -95,9 +106,9 @@ func (l *LinkService) Delete(ifIndex int) error {
 }
 
 // Get retrieves interface information by index.
-func (l *LinkService) Get(ifIndex uint8) (LinkMessage, error) {
+func (l *LinkService) Get(ifIndex uint32) (LinkMessage, error) {
 	req := &LinkMessage{
-		Index:  1,
+		Index:  ifIndex,
 		Family: 17,
 		Type:   0,
 	}
@@ -139,6 +150,11 @@ type LinkAttributes struct {
 	Type      int               // Link type.
 	QueueDisc *string           // Queueing discipline.
 	Stats     *LinkStats        // Interface Statistics.
+}
+
+// UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
+func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
+	return nil
 }
 
 //LinkStats contains packet statistics
