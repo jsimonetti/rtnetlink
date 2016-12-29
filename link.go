@@ -2,8 +2,8 @@ package rtnetlink
 
 import (
 	"errors"
-	"fmt"
 	"local/rtnetlink/netlink"
+	"local/rtnetlink/netlink/nlenc"
 	"net"
 
 	"github.com/davecgh/go-spew/spew"
@@ -26,55 +26,58 @@ const (
 // An LinkMessage is a route netlink link message.
 type LinkMessage struct {
 	// Always set to AF_UNSPEC (0)
-	Family uint8
+	Family uint16
 
 	// Device Type
-	Type uint8
+	Type uint16
 
 	// Unique interface index, using a nonzero value with
 	// NewLink will instruct the kernel to create a
 	// device with the given index (kernel 3.7+ required)
-	Index uint8
+	Index uint32
 
 	// Contains device flags, see netdevice(7)
-	Flags uint8
+	Flags uint32
 
 	// Change Flags, reserved for future use and should
 	// always be 0xffffffff
-	Change [4]byte
+	Change uint32
 
 	// Each LinkMessage can contain an optional Attributes list
 	Attributes *LinkAttributes
 }
 
-const linkMessageLength = 8
+const linkMessageLength = 16
 
 // MarshalBinary marshals a LinkMessage into a byte slice.
-func (m LinkMessage) MarshalBinary() ([]byte, error) {
+func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, linkMessageLength)
 
-	b[0] = 0
-	b[4] = 255
-	b[5] = 255
-	b[6] = 255
-	b[7] = 255
+	b[0] = 0 //Family
+	b[1] = 0 //reserved
+	nlenc.PutUint16(b[2:4], m.Type)
+	nlenc.PutUint32(b[4:8], m.Index)
+	nlenc.PutUint32(b[8:12], m.Flags)
+	nlenc.PutUint32(b[12:16], 0) //Change, reserved
 
 	return b, nil
+
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
-	m.Family = b[0]
-	m.Type = b[1]
-	m.Index = b[2]
-	m.Flags = b[3]
-	fmt.Printf("unmarshal: %#v\n", b)
+	m.Family = nlenc.Uint16(b[0:0])
+	m.Type = nlenc.Uint16(b[2:3])
+	m.Index = nlenc.Uint32(b[4:7])
+	m.Flags = nlenc.Uint32(b[8:11])
+	m.Change = nlenc.Uint32(b[12:15])
+	//fmt.Printf("unmarshal: %#v\n", b)
 	spew.Dump(b)
 	return nil
 }
 
 // rtMessage is an empty method to sattisfy the Message interface.
-func (LinkMessage) rtMessage() {}
+func (*LinkMessage) rtMessage() {}
 
 // LinkService is used to retrieve rtnetlink family information.
 type LinkService struct {
@@ -93,12 +96,24 @@ func (l *LinkService) Delete(ifIndex int) error {
 
 // Get retrieves interface information by index.
 func (l *LinkService) Get(ifIndex uint8) (LinkMessage, error) {
+	req := &LinkMessage{
+		Index:  1,
+		Family: 17,
+		Type:   0,
+	}
+
+	flags := netlink.HeaderFlagsRoot
+	msg, err := l.c.Execute(req, 18, flags)
+	if err != nil {
+		return LinkMessage{}, err
+	}
+	spew.Dump(msg)
 	return LinkMessage{}, nil
 }
 
 // List retrieves all interfaces.
 func (l *LinkService) List() ([]LinkMessage, error) {
-	req := LinkMessage{}
+	req := &LinkMessage{}
 
 	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
 	msgs, err := l.c.Execute(req, 18, flags)
@@ -166,6 +181,10 @@ type LinkStats struct {
 
 func buildLinkMessages(msgs []Message) ([]LinkMessage, error) {
 	links := make([]LinkMessage, 0, len(msgs))
-
+	for _, msg := range msgs {
+		spew.Dump(msg)
+		link := LinkMessage{}
+		links = append(links, link)
+	}
 	return links, nil
 }

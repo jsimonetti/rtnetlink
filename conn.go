@@ -88,7 +88,7 @@ func (c *Conn) Receive() ([]Message, []netlink.Message, error) {
 
 	lmsgs := make([]Message, 0, len(msgs))
 	for _, nm := range msgs {
-		var lm LinkMessage
+		lm := &LinkMessage{}
 		if err := (lm).UnmarshalBinary(nm.Data); err != nil {
 			return nil, nil, err
 		}
