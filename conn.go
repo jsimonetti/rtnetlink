@@ -2,7 +2,8 @@ package rtnetlink
 
 import (
 	"encoding"
-	"local/rtnetlink/netlink"
+
+	"github.com/mdlayher/netlink"
 )
 
 // Protocol is the netlink protocol constant used to specify rtnetlink.

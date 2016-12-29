@@ -2,11 +2,11 @@ package rtnetlink
 
 import (
 	"errors"
-	"local/rtnetlink/netlink"
-	"local/rtnetlink/netlink/nlenc"
 	"net"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/mdlayher/netlink"
+	"github.com/mdlayher/netlink/nlenc"
 )
 
 var (
@@ -113,7 +113,7 @@ func (l *LinkService) Get(ifIndex uint32) (LinkMessage, error) {
 		Type:   0,
 	}
 
-	flags := netlink.HeaderFlagsRoot
+	flags := netlink.HeaderFlagsRequest
 	msg, err := l.c.Execute(req, 18, flags)
 	if err != nil {
 		return LinkMessage{}, err
@@ -132,8 +132,7 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 		return nil, err
 	}
 
-	// Last message indicates end of multi-part message, so trim it
-	return buildLinkMessages(msgs[:len(msgs)-1])
+	return buildLinkMessages(msgs)
 }
 
 // Set sets interface attributes according to the LinkMessage information.
