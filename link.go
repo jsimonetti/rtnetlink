@@ -2,10 +2,11 @@ package rtnetlink
 
 import (
 	"errors"
-	"fmt"
-	"local/rtnetlink/netlink"
-	"local/rtnetlink/netlink/nlenc"
 	"net"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/mdlayher/netlink"
+	"github.com/mdlayher/netlink/nlenc"
 )
 
 var (
@@ -107,7 +108,7 @@ func (l *LinkService) Delete(ifIndex int) error {
 func (l *LinkService) Get(req *LinkMessage) (LinkMessage, error) {
 	req.Family = 17
 
-	flags := netlink.HeaderFlagsRoot
+	flags := netlink.HeaderFlagsRequest
 	msg, err := l.c.Execute(req, 18, flags)
 	if err != nil {
 		return LinkMessage{}, err
