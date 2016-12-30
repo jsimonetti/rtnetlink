@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
 )
@@ -106,7 +105,13 @@ const (
 )
 
 // New creates a new interface using the LinkMessage information.
-func (l *LinkService) New(m LinkMessage) error {
+func (l *LinkService) New(req *LinkMessage) error {
+	flags := netlink.HeaderFlagsRequest
+	_, err := l.c.Send(req, rtmSetLink, flags)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -117,12 +122,11 @@ func (l *LinkService) Delete(index uint32) error {
 	}
 
 	flags := netlink.HeaderFlagsRequest
-	msg, err := l.c.Send(req, rtmDelLink, flags)
+	_, err := l.c.Send(req, rtmDelLink, flags)
 	if err != nil {
 		return err
 	}
 
-	spew.Dump(msg)
 	return nil
 }
 
@@ -146,6 +150,17 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 	return *link, nil
 }
 
+// Set sets interface attributes according to the LinkMessage information.
+func (l *LinkService) Set(req *LinkMessage) error {
+	flags := netlink.HeaderFlagsRequest
+	_, err := l.c.Send(req, rtmSetLink, flags)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // List retrieves all interfaces.
 func (l *LinkService) List() ([]LinkMessage, error) {
 	req := &LinkMessage{}
@@ -163,11 +178,6 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 	}
 
 	return links, nil
-}
-
-// Set sets interface attributes according to the LinkMessage information.
-func (l *LinkService) Set(m LinkMessage) error {
-	return nil
 }
 
 // LinkAttributes contains all attributes for an interface.
