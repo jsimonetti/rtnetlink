@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
 )
@@ -110,7 +111,18 @@ func (l *LinkService) New(m LinkMessage) error {
 }
 
 // Delete removes an interface by index.
-func (l *LinkService) Delete(ifIndex int) error {
+func (l *LinkService) Delete(index uint32) error {
+	req := &LinkMessage{
+		Index: index,
+	}
+
+	flags := netlink.HeaderFlagsRequest
+	msg, err := l.c.Send(req, rtmDelLink, flags)
+	if err != nil {
+		return err
+	}
+
+	spew.Dump(msg)
 	return nil
 }
 
