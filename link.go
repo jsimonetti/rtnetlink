@@ -10,8 +10,11 @@ import (
 )
 
 var (
-	// errInvalidMessage is returned when a LinkMessage is malformed.
-	errInvalidMessage = errors.New("rtnetlink LinkMessage is invalid or too short")
+	// errInvalidLinkMessage is returned when a LinkMessage is malformed.
+	errInvalidLinkMessage = errors.New("rtnetlink LinkMessage is invalid or too short")
+
+	// errInvalidLinkMessageAttr is returned when a LinkMessage is malformed.
+	errInvalidLinkMessageAttr = errors.New("rtnetlink LinkMessage has a wrong attribute data length")
 )
 
 var _ Message = &LinkMessage{}
@@ -54,25 +57,28 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	nlenc.PutUint32(b[12:16], 0) //Change, reserved
 
 	return b, nil
-
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
+	l := len(b)
+	if l < 16 {
+		fmt.Printf("msg too small: %#v\n", b)
+		return errInvalidLinkMessage
+	}
+
 	m.Family = nlenc.Uint16(b[0:2])
 	m.Type = nlenc.Uint16(b[2:4])
 	m.Index = nlenc.Uint32(b[4:8])
 	m.Flags = nlenc.Uint32(b[8:12])
 	m.Change = nlenc.Uint32(b[12:16])
 
-	if len(b) > 16 {
-		la := &LinkAttributes{}
-		err := la.UnmarshalBinary(b[16:])
+	if l > 16 {
+		m.Attributes = &LinkAttributes{}
+		err := m.Attributes.UnmarshalBinary(b[16:])
 		if err != nil {
 			return err
 		}
-
-		m.Attributes = la
 	}
 
 	return nil
@@ -106,10 +112,8 @@ func (l *LinkService) Delete(ifIndex int) error {
 
 // Get retrieves interface information by index.
 func (l *LinkService) Get(req *LinkMessage) (LinkMessage, error) {
-	req.Family = 17
-
 	flags := netlink.HeaderFlagsRequest
-	msg, err := l.c.Execute(req, 18, flags)
+	msg, err := l.c.Execute(req, rtmGetLink, flags)
 	if err != nil {
 		return LinkMessage{}, err
 	}
@@ -123,7 +127,7 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 	req := &LinkMessage{}
 
 	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
-	msgs, err := l.c.Execute(req, 18, flags)
+	msgs, err := l.c.Execute(req, rtmGetLink, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -177,14 +181,26 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 		case iflaUnspec:
 			//unused attribute
 		case iflaAddress:
+			if len(attr.Data) != 6 {
+				return errInvalidLinkMessageAttr
+			}
 			a.Address = attr.Data
 		case iflaBroadcast:
+			if len(attr.Data) != 6 {
+				return errInvalidLinkMessageAttr
+			}
 			a.Broadcast = attr.Data
 		case iflaIfname:
 			a.Name = nlenc.String(attr.Data)
 		case iflaMTU:
+			if len(attr.Data) != 4 {
+				return errInvalidLinkMessageAttr
+			}
 			a.MTU = nlenc.Uint32(attr.Data)
 		case iflaLink:
+			if len(attr.Data) != 4 {
+				return errInvalidLinkMessageAttr
+			}
 			a.Type = nlenc.Uint32(attr.Data)
 		case iflaQdisc:
 			a.QueueDisc = nlenc.String(attr.Data)
@@ -240,6 +256,7 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 	if len(b) != 96 && len(b) != 104 {
 		return fmt.Errorf("incorrect size, want: 96 or 104, got: %d", len(b))
 	}
+
 	a.RXPackets = nlenc.Uint32(b[0:4])
 	a.TXPackets = nlenc.Uint32(b[4:8])
 	a.RXBytes = nlenc.Uint32(b[8:12])
@@ -264,22 +281,15 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 	a.TXHeartbeatErrors = nlenc.Uint32(b[84:88])
 	a.TXWindowErrors = nlenc.Uint32(b[88:92])
 
-	if len(b) > 96 {
-		a.RXCompressed = nlenc.Uint32(b[92:96])
-		a.TXCompressed = nlenc.Uint32(b[96:100])
-		a.RXNoHandler = nlenc.Uint32(b[100:104])
-	} else {
+	if len(b) == 96 {
 		a.RXNoHandler = nlenc.Uint32(b[92:96])
 	}
 
-	return nil
-}
-func buildLinkMessages(msgs []Message) ([]LinkMessage, error) {
-	links := make([]LinkMessage, 0, len(msgs))
-	for _, m := range msgs {
-		link := (m).(*LinkMessage)
-		links = append(links, *link)
+	if len(b) == 104 {
+		a.RXCompressed = nlenc.Uint32(b[92:96])
+		a.TXCompressed = nlenc.Uint32(b[96:100])
+		a.RXNoHandler = nlenc.Uint32(b[100:104])
 	}
 
-	return links, nil
+	return nil
 }
