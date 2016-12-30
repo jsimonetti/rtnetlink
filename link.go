@@ -68,7 +68,6 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	l := len(b)
 	if l < 16 {
-		fmt.Printf("msg too small: %#v\n", b)
 		return errInvalidLinkMessage
 	}
 
