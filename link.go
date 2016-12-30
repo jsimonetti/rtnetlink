@@ -2,9 +2,9 @@ package rtnetlink
 
 import (
 	"errors"
+	"fmt"
 	"net"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
 )
