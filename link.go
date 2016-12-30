@@ -2,6 +2,7 @@ package rtnetlink
 
 import (
 	"errors"
+	"fmt"
 	"local/rtnetlink/netlink"
 	"local/rtnetlink/netlink/nlenc"
 	"net"
@@ -14,14 +15,7 @@ var (
 
 var _ Message = &LinkMessage{}
 
-const (
-	rtmNewLink = 16
-	rtmDelLink = 17
-	rtmGetLink = 18
-	rtmSetLink = 19
-)
-
-// An LinkMessage is a route netlink link message.
+// A LinkMessage is a route netlink link message.
 type LinkMessage struct {
 	// Always set to AF_UNSPEC (0)
 	Family uint16
@@ -90,6 +84,14 @@ func (*LinkMessage) rtMessage() {}
 type LinkService struct {
 	c *Conn
 }
+
+// Constants used to request information from rtnetlink links.
+const (
+	rtmNewLink = 16
+	rtmDelLink = 17
+	rtmGetLink = 18
+	rtmSetLink = 19
+)
 
 // New creates a new interface using the LinkMessage information.
 func (l *LinkService) New(m LinkMessage) error {
@@ -173,7 +175,6 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 		switch attr.Type {
 		case iflaUnspec:
 			//unused attribute
-			continue
 		case iflaAddress:
 			a.Address = attr.Data
 		case iflaBroadcast:
@@ -186,15 +187,12 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 			a.Type = nlenc.Uint32(attr.Data)
 		case iflaQdisc:
 			a.QueueDisc = nlenc.String(attr.Data)
-			/*
-				case iflaStats:
-					stats := &LinkStats{}
-					err := stats.UnmarshalBinary(attr.Data)
-					if err != nil {
-						return err
-					}
-					a.Stats = stats
-			*/
+		case iflaStats:
+			a.Stats = &LinkStats{}
+			err := a.Stats.UnmarshalBinary(attr.Data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -203,57 +201,76 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 
 //LinkStats contains packet statistics
 type LinkStats struct {
-	//further unmarshalled info, types tbd
-	/*
-		__u64   rx_packets;             // total packets received
-		__u64   tx_packets;             // total packets transmitted
-		__u64   rx_bytes;               // total bytes received
-		__u64   tx_bytes;               // total bytes transmitted
-		__u64   rx_errors;              // bad packets received
-		__u64   tx_errors;              // packet transmit problems
-		__u64   rx_dropped;             // no space in linux buffers
-		__u64   tx_dropped;             // no space available in linux
-		__u64   multicast;              // multicast packets received
-		__u64   collisions;
+	RXPackets  uint32 // total packets received
+	TXPackets  uint32 // total packets transmitted
+	RXBytes    uint32 // total bytes received
+	TXBytes    uint32 // total bytes transmitted
+	RXErrors   uint32 // bad packets received
+	TXErrors   uint32 // packet transmit problems
+	RXDropped  uint32 // no space in linux buffers
+	TXDropped  uint32 // no space available in linux
+	Multicast  uint32 // multicast packets received
+	Collisions uint32
 
-		// detailed rx_errors:
-		__u64   rx_length_errors;
-		__u64   rx_over_errors;         // receiver ring buff overflow
-		__u64   rx_crc_errors;          // recved pkt with crc error
-		__u64   rx_frame_errors;        // recv'd frame alignment error
-		__u64   rx_fifo_errors;         // recv'r fifo overrun
-		__u64   rx_missed_errors;       // receiver missed packet
+	// detailed rx_errors:
+	RXLengthErrors uint32
+	RXOverErrors   uint32 // receiver ring buff overflow
+	RXCRCErrors    uint32 // recved pkt with crc error
+	RXFrameErrors  uint32 // recv'd frame alignment error
+	RXFIFOErrors   uint32 // recv'r fifo overrun
+	RXMissedErrors uint32 // receiver missed packet
 
-		// detailed tx_errors
-		__u64   tx_aborted_errors;
-		__u64   tx_carrier_errors;
-		__u64   tx_fifo_errors;
-		__u64   tx_heartbeat_errors;
-		__u64   tx_window_errors;
+	// detailed tx_errors
+	TXAbortedErrors   uint32
+	TXCarrierErrors   uint32
+	TXFIFOErrors      uint32
+	TXHeartbeatErrors uint32
+	TXWindowErrors    uint32
 
-		// for cslip etc
-		__u64   rx_compressed;
-		__u64   tx_compressed;
+	// for cslip etc
+	RXCompressed uint32
+	TXCompressed uint32
 
-		__u64   rx_nohandler;           // dropped, no handler found
-	*/
+	RXNoHandler uint32 // dropped, no handler found
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkStats) UnmarshalBinary(b []byte) error {
-	/*
-		attrs, err := netlink.UnmarshalAttributes(b)
-		if err != nil {
-			return err
-		}
+	if len(b) != 96 && len(b) != 104 {
+		return fmt.Errorf("incorrect size, want: 96 or 104, got: %d", len(b))
+	}
+	a.RXPackets = nlenc.Uint32(b[0:4])
+	a.TXPackets = nlenc.Uint32(b[4:8])
+	a.RXBytes = nlenc.Uint32(b[8:12])
+	a.TXBytes = nlenc.Uint32(b[12:16])
+	a.RXErrors = nlenc.Uint32(b[16:20])
+	a.TXErrors = nlenc.Uint32(b[20:24])
+	a.RXDropped = nlenc.Uint32(b[24:28])
+	a.TXDropped = nlenc.Uint32(b[28:32])
+	a.Multicast = nlenc.Uint32(b[32:36])
+	a.Collisions = nlenc.Uint32(b[36:40])
 
-		for _, attr := range attrs {
-			switch attr.Type {
-			default:
-				// TODO(jsimonetti): parse LinkStats
-			}
-		}
-	*/
+	a.RXLengthErrors = nlenc.Uint32(b[40:44])
+	a.RXOverErrors = nlenc.Uint32(b[44:48])
+	a.RXCRCErrors = nlenc.Uint32(b[48:52])
+	a.RXFrameErrors = nlenc.Uint32(b[52:56])
+	a.RXFIFOErrors = nlenc.Uint32(b[56:60])
+	a.RXMissedErrors = nlenc.Uint32(b[60:64])
+
+	a.TXAbortedErrors = nlenc.Uint32(b[68:72])
+	a.TXCarrierErrors = nlenc.Uint32(b[76:80])
+	a.TXFIFOErrors = nlenc.Uint32(b[80:84])
+	a.TXHeartbeatErrors = nlenc.Uint32(b[84:88])
+	a.TXWindowErrors = nlenc.Uint32(b[88:92])
+
+	if len(b) > 96 {
+		a.RXCompressed = nlenc.Uint32(b[92:96])
+		a.TXCompressed = nlenc.Uint32(b[96:100])
+		a.RXNoHandler = nlenc.Uint32(b[100:104])
+	} else {
+		a.RXNoHandler = nlenc.Uint32(b[92:96])
+	}
+
 	return nil
 }
 func buildLinkMessages(msgs []Message) ([]LinkMessage, error) {
