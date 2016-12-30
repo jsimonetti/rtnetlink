@@ -5,8 +5,6 @@ import (
 	"local/rtnetlink/netlink"
 	"local/rtnetlink/netlink/nlenc"
 	"net"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 var (
@@ -71,8 +69,6 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	m.Index = nlenc.Uint32(b[4:8])
 	m.Flags = nlenc.Uint32(b[8:12])
 	m.Change = nlenc.Uint32(b[12:16])
-	//fmt.Printf("unmarshal: %#v\n", b)
-	spew.Dump(b)
 
 	if len(b) > 16 {
 		la := &LinkAttributes{}
@@ -106,20 +102,17 @@ func (l *LinkService) Delete(ifIndex int) error {
 }
 
 // Get retrieves interface information by index.
-func (l *LinkService) Get(ifIndex uint32) (LinkMessage, error) {
-	req := &LinkMessage{
-		Index:  ifIndex,
-		Family: 17,
-		Type:   0,
-	}
+func (l *LinkService) Get(req *LinkMessage) (LinkMessage, error) {
+	req.Family = 17
 
 	flags := netlink.HeaderFlagsRoot
 	msg, err := l.c.Execute(req, 18, flags)
 	if err != nil {
 		return LinkMessage{}, err
 	}
-	spew.Dump(msg)
-	return LinkMessage{}, nil
+
+	link := (msg[0]).(*LinkMessage)
+	return *link, nil
 }
 
 // List retrieves all interfaces.
@@ -132,8 +125,13 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 		return nil, err
 	}
 
-	// Last message indicates end of multi-part message, so trim it
-	return buildLinkMessages(msgs[:len(msgs)-1])
+	links := make([]LinkMessage, 0, len(msgs))
+	for _, m := range msgs {
+		link := (m).(*LinkMessage)
+		links = append(links, *link)
+	}
+
+	return links, nil
 }
 
 // Set sets interface attributes according to the LinkMessage information.
@@ -141,19 +139,65 @@ func (l *LinkService) Set(m LinkMessage) error {
 	return nil
 }
 
-//LinkAttributes contains all attributes for an interface
+// LinkAttributes contains all attributes for an interface.
 type LinkAttributes struct {
-	Address   *net.HardwareAddr // interface L2 address
-	Broadcast *net.HardwareAddr // L2 broadcast address.
-	Name      string            // Device name.
-	MTU       uint8             // MTU of the device
-	Type      int               // Link type.
-	QueueDisc *string           // Queueing discipline.
-	Stats     *LinkStats        // Interface Statistics.
+	Address   net.HardwareAddr // Interface L2 address
+	Broadcast net.HardwareAddr // L2 broadcast address
+	Name      string           // Device name
+	MTU       uint32           // MTU of the device
+	Type      uint32           // Link type
+	QueueDisc string           // Queueing discipline
+	Stats     *LinkStats       // Interface Statistics
 }
+
+// Attribute IDs mapped to specific LinkAttribute fields.
+const (
+	iflaUnspec uint16 = iota
+	iflaAddress
+	iflaBroadcast
+	iflaIfname
+	iflaMTU
+	iflaLink
+	iflaQdisc
+	iflaStats
+)
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
+	attrs, err := netlink.UnmarshalAttributes(b)
+	if err != nil {
+		return err
+	}
+
+	for _, attr := range attrs {
+		switch attr.Type {
+		case iflaUnspec:
+			//unused attribute
+			continue
+		case iflaAddress:
+			a.Address = attr.Data
+		case iflaBroadcast:
+			a.Broadcast = attr.Data
+		case iflaIfname:
+			a.Name = nlenc.String(attr.Data)
+		case iflaMTU:
+			a.MTU = nlenc.Uint32(attr.Data)
+		case iflaLink:
+			a.Type = nlenc.Uint32(attr.Data)
+		case iflaQdisc:
+			a.QueueDisc = nlenc.String(attr.Data)
+			/*
+				case iflaStats:
+					stats := &LinkStats{}
+					err := stats.UnmarshalBinary(attr.Data)
+					if err != nil {
+						return err
+					}
+					a.Stats = stats
+			*/
+		}
+	}
+
 	return nil
 }
 
@@ -195,12 +239,29 @@ type LinkStats struct {
 	*/
 }
 
+// UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
+func (a *LinkStats) UnmarshalBinary(b []byte) error {
+	/*
+		attrs, err := netlink.UnmarshalAttributes(b)
+		if err != nil {
+			return err
+		}
+
+		for _, attr := range attrs {
+			switch attr.Type {
+			default:
+				// TODO(jsimonetti): parse LinkStats
+			}
+		}
+	*/
+	return nil
+}
 func buildLinkMessages(msgs []Message) ([]LinkMessage, error) {
 	links := make([]LinkMessage, 0, len(msgs))
-	for _, msg := range msgs {
-		spew.Dump(msg)
-		link := LinkMessage{}
-		links = append(links, link)
+	for _, m := range msgs {
+		link := (m).(*LinkMessage)
+		links = append(links, *link)
 	}
+
 	return links, nil
 }
