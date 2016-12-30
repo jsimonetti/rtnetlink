@@ -13,7 +13,7 @@ var (
 	// errInvalidLinkMessage is returned when a LinkMessage is malformed.
 	errInvalidLinkMessage = errors.New("rtnetlink LinkMessage is invalid or too short")
 
-	// errInvalidLinkMessageAttr is returned when a LinkMessage is malformed.
+	// errInvalidLinkMessageAttr is returned when link attributes are malformed.
 	errInvalidLinkMessageAttr = errors.New("rtnetlink LinkMessage has a wrong attribute data length")
 )
 
@@ -39,8 +39,8 @@ type LinkMessage struct {
 	// always be 0xffffffff
 	Change uint32
 
-	// Each LinkMessage can contain an optional Attributes list
-	Attributes *LinkAttributes
+	// Attributes List
+	Attributes LinkAttributes
 }
 
 const linkMessageLength = 16
@@ -56,7 +56,12 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	nlenc.PutUint32(b[8:12], m.Flags)
 	nlenc.PutUint32(b[12:16], 0) //Change, reserved
 
-	return b, nil
+	a, err := m.Attributes.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return append(b, a...), nil
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
@@ -74,7 +79,7 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	m.Change = nlenc.Uint32(b[12:16])
 
 	if l > 16 {
-		m.Attributes = &LinkAttributes{}
+		m.Attributes = LinkAttributes{}
 		err := m.Attributes.UnmarshalBinary(b[16:])
 		if err != nil {
 			return err
@@ -111,11 +116,19 @@ func (l *LinkService) Delete(ifIndex int) error {
 }
 
 // Get retrieves interface information by index.
-func (l *LinkService) Get(req *LinkMessage) (LinkMessage, error) {
-	flags := netlink.HeaderFlagsRequest
+func (l *LinkService) Get(index uint32) (LinkMessage, error) {
+	req := &LinkMessage{
+		Index: index,
+	}
+
+	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDumpFiltered
 	msg, err := l.c.Execute(req, rtmGetLink, flags)
 	if err != nil {
 		return LinkMessage{}, err
+	}
+
+	if len(msg) > 1 {
+		return LinkMessage{}, fmt.Errorf("too many matches")
 	}
 
 	link := (msg[0]).(*LinkMessage)
@@ -214,6 +227,58 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 	}
 
 	return nil
+}
+
+func uint16tobyte(v uint16) []byte {
+	b := make([]byte, 2)
+	nlenc.PutUint16(b, v)
+	return b
+}
+
+func uint32tobyte(v uint32) []byte {
+	b := make([]byte, 4)
+	nlenc.PutUint32(b, v)
+	return b
+}
+
+// MarshalBinary marshals a LinkAttributes into a byte slice.
+func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
+	return netlink.MarshalAttributes([]netlink.Attribute{
+		{
+			Type: iflaUnspec,
+			Data: uint16tobyte(0),
+		},
+		{
+			Type: iflaAddress,
+			Data: a.Address,
+		},
+		{
+			Type: iflaBroadcast,
+			Data: a.Broadcast,
+		},
+		{
+			Type: iflaIfname,
+			Data: nlenc.Bytes(a.Name),
+		},
+		{
+			Type: iflaMTU,
+			Data: uint32tobyte(a.MTU),
+		},
+		{
+			Type: iflaLink,
+			Data: uint32tobyte(a.Type),
+		},
+		{
+			Type: iflaQdisc,
+			Data: nlenc.Bytes(a.QueueDisc),
+		},
+		/*
+			{
+				Type: iflaStats,
+				Data: nlenc.Bytes(name),
+			},
+		*/
+	})
 }
 
 //LinkStats contains packet statistics

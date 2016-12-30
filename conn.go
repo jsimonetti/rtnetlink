@@ -70,7 +70,6 @@ func (c *Conn) Send(m Message, family uint16, flags netlink.HeaderFlags) (netlin
 		return netlink.Message{}, err
 	}
 	nm.Data = mb
-
 	reqnm, err := c.c.Send(nm)
 	if err != nil {
 		return netlink.Message{}, err
