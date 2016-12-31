@@ -142,8 +142,8 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 		return LinkMessage{}, err
 	}
 
-	if len(msg) > 1 {
-		return LinkMessage{}, fmt.Errorf("too many matches")
+	if len(msg) != 1 {
+		return LinkMessage{}, fmt.Errorf("too many/little matches, expected 1")
 	}
 
 	link := (msg[0]).(*LinkMessage)
