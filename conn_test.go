@@ -24,7 +24,7 @@ func TestConnExecute(t *testing.T) {
 		Data: mustMarshal(req),
 	}
 	wantrt := []LinkMessage{
-		LinkMessage{
+		{
 			Family: 0x101,
 			Type:   0x0,
 			Index:  0x4030201,
@@ -138,7 +138,7 @@ func TestConnReceive(t *testing.T) {
 
 	wantnl := tc.receive
 	wantrt := []LinkMessage{
-		LinkMessage{
+		{
 			Family: 0x0,
 			Type:   0x0,
 			Index:  0x0,
@@ -154,7 +154,7 @@ func TestConnReceive(t *testing.T) {
 				Stats:     nil,
 			},
 		},
-		LinkMessage{
+		{
 			Family: 0x102,
 			Type:   0x0,
 			Index:  0x4030201,
