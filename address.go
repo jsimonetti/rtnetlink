@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"unsafe"
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
@@ -53,10 +52,10 @@ const addressMessageLength = 8
 func (m *AddressMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, addressMessageLength)
 
-	PutUint8(b[0], m.Family)
-	PutUint8(b[1], m.PrefixLength)
-	PutUint8(b[2], m.Flags)
-	PutUint8(b[3], m.Scope)
+	m.Family = b[0]
+	m.PrefixLength = b[1]
+	m.Flags = b[2]
+	m.Scope = b[3]
 	nlenc.PutUint32(b[4:8], m.Index)
 
 	a, err := m.Attributes.MarshalBinary()
@@ -67,16 +66,6 @@ func (m *AddressMessage) MarshalBinary() ([]byte, error) {
 	return append(b, a...), nil
 }
 
-// PutUint8 encodes a uint8 into b using the host machine's native endianness.
-func PutUint8(b byte, v uint8) {
-	*(*uint8)(unsafe.Pointer(&b)) = v
-}
-
-// Uint8 decodes a uint8 from b using the host machine's native endianness.
-func Uint8(b byte) uint8 {
-	return *(*uint8)(unsafe.Pointer(&b))
-}
-
 // UnmarshalBinary unmarshals the contents of a byte slice into a AddressMessage.
 func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 	l := len(b)
@@ -84,10 +73,10 @@ func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 		return errInvalidAddressMessage
 	}
 
-	m.Family = Uint8(b[0])
-	m.PrefixLength = Uint8(b[1])
-	m.Flags = Uint8(b[3])
-	m.Scope = Uint8(b[4])
+	m.Family = uint8(b[0])
+	m.PrefixLength = uint8(b[1])
+	m.Flags = uint8(b[3])
+	m.Scope = uint8(b[4])
 	m.Index = nlenc.Uint32(b[4:8])
 
 	if l > addressMessageLength {
@@ -187,11 +176,11 @@ type AddressAttributes struct {
 	Address   net.IP // Interface Ip address
 	Local     net.IP // Local Ip address
 	Label     string
-	Broadcast net.IP // Broadcast Ip address
-	Anycast   net.IP // Anycast Ip address
-	CacheInfo []byte //Cache Info
-	Multicast net.IP // Multicast Ip address
-	Flags     uint32 // Address flags
+	Broadcast net.IP    // Broadcast Ip address
+	Anycast   net.IP    // Anycast Ip address
+	CacheInfo CacheInfo // Address information
+	Multicast net.IP    // Multicast Ip address
+	Flags     uint32    // Address flags
 }
 
 // Attribute IDs mapped to specific LinkAttribute fields.
@@ -217,16 +206,46 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 		switch attr.Type {
 		case iflaUnspec:
 			//unused attribute
-		case iflaAddress:
-			//if len(attr.Data) != 6 {
-			//	return errInvalidAddressMessageAttr
-			//}
+		case ifaAddress:
+			if len(attr.Data) != 4 && len(attr.Data) != 16 {
+				return errInvalidAddressMessageAttr
+			}
 			a.Address = attr.Data
-		case iflaBroadcast:
-			//if len(attr.Data) != 6 {
-			//	return errInvalidAddressMessageAttr
-			//}
+		case ifaLocal:
+			if len(attr.Data) != 4 {
+				return errInvalidAddressMessageAttr
+			}
+			a.Local = attr.Data
+		case ifaLabel:
+			a.Label = nlenc.String(attr.Data)
+		case ifaBroadcast:
+			if len(attr.Data) != 4 {
+				return errInvalidAddressMessageAttr
+			}
 			a.Broadcast = attr.Data
+		case ifaAnycast:
+			if len(attr.Data) != 4 && len(attr.Data) != 16 {
+				return errInvalidAddressMessageAttr
+			}
+			a.Anycast = attr.Data
+		case ifaCacheInfo:
+			if len(attr.Data) != 16 {
+				return errInvalidAddressMessageAttr
+			}
+			err := a.CacheInfo.UnmarshalBinary(attr.Data)
+			if err != nil {
+				return err
+			}
+		case ifaMulticast:
+			if len(attr.Data) != 4 && len(attr.Data) != 16 {
+				return errInvalidAddressMessageAttr
+			}
+			a.Multicast = attr.Data
+		case ifaFlags:
+			if len(attr.Data) != 4 {
+				return errInvalidAddressMessageAttr
+			}
+			a.Flags = nlenc.Uint32(attr.Data)
 		}
 	}
 
@@ -249,4 +268,26 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 			Data: a.Broadcast,
 		},
 	})
+}
+
+// CacheInfo contains address information
+type CacheInfo struct {
+	Prefered uint32
+	Valid    uint32
+	Created  uint32
+	Updated  uint32
+}
+
+// UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
+func (c *CacheInfo) UnmarshalBinary(b []byte) error {
+	if len(b) != 16 {
+		return fmt.Errorf("incorrect size, want: 16, got: %d", len(b))
+	}
+
+	c.Prefered = nlenc.Uint32(b[0:4])
+	c.Valid = nlenc.Uint32(b[4:8])
+	c.Created = nlenc.Uint32(b[8:12])
+	c.Updated = nlenc.Uint32(b[12:16])
+
+	return nil
 }
