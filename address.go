@@ -52,10 +52,10 @@ const addressMessageLength = 8
 func (m *AddressMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, addressMessageLength)
 
-	m.Family = b[0]
-	m.PrefixLength = b[1]
-	m.Flags = b[2]
-	m.Scope = b[3]
+	b[0] = m.Family
+	b[1] = m.PrefixLength
+	b[2] = m.Flags
+	b[3] = m.Scope
 	nlenc.PutUint32(b[4:8], m.Index)
 
 	a, err := m.Attributes.MarshalBinary()
@@ -116,11 +116,13 @@ func (a *AddressService) New(req *AddressMessage) error {
 	return nil
 }
 
-// Delete removes an address by index.
-//TODO: dont use index for deletion
-func (a *AddressService) Delete(index uint32) error {
+// Delete removes an address by ip and interface index.
+func (a *AddressService) Delete(address net.IP, index uint32) error {
 	req := &AddressMessage{
 		Index: index,
+		Attributes: AddressAttributes{
+			Address: address,
+		},
 	}
 
 	flags := netlink.HeaderFlagsRequest
@@ -130,26 +132,6 @@ func (a *AddressService) Delete(index uint32) error {
 	}
 
 	return nil
-}
-
-// Get retrieves address information by index.
-func (a *AddressService) Get(index uint32) (AddressMessage, error) {
-	req := &AddressMessage{
-		Index: index,
-	}
-
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDumpFiltered
-	msg, err := a.c.Execute(req, rtmGetAddress, flags)
-	if err != nil {
-		return AddressMessage{}, err
-	}
-
-	if len(msg) != 1 {
-		return AddressMessage{}, fmt.Errorf("too many/little matches, expected 1")
-	}
-
-	address := (msg[0]).(*AddressMessage)
-	return *address, nil
 }
 
 // List retrieves all addresses.
@@ -256,16 +238,32 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 	return netlink.MarshalAttributes([]netlink.Attribute{
 		{
-			Type: iflaUnspec,
+			Type: ifaUnspec,
 			Data: nlenc.Uint16Bytes(0),
 		},
 		{
-			Type: iflaAddress,
+			Type: ifaAddress,
 			Data: a.Address,
 		},
 		{
-			Type: iflaBroadcast,
+			Type: ifaLocal,
+			Data: a.Local,
+		},
+		{
+			Type: ifaBroadcast,
 			Data: a.Broadcast,
+		},
+		{
+			Type: ifaAnycast,
+			Data: a.Anycast,
+		},
+		{
+			Type: ifaMulticast,
+			Data: a.Multicast,
+		},
+		{
+			Type: ifaFlags,
+			Data: nlenc.Uint32Bytes(a.Flags),
 		},
 	})
 }
