@@ -12,8 +12,9 @@ const Protocol = 0x0
 // A Conn is a route netlink connection. A Conn can be used to send and
 // receive route netlink messages to and from netlink.
 type Conn struct {
-	c    conn
-	Link *LinkService
+	c       conn
+	Link    *LinkService
+	Address *AddressService
 }
 
 var _ conn = &netlink.Conn{}
@@ -44,6 +45,7 @@ func newConn(c conn) *Conn {
 	}
 
 	rtc.Link = &LinkService{c: rtc}
+	rtc.Address = &AddressService{c: rtc}
 
 	return rtc
 }
@@ -86,14 +88,30 @@ func (c *Conn) Receive() ([]Message, []netlink.Message, error) {
 		return nil, nil, err
 	}
 
+	return messageUnmarshall(msgs)
+}
+
+// messageUnmarshall will unmarshal the message based on its type
+func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, error) {
 	lmsgs := make([]Message, 0, len(msgs))
+
 	for _, nm := range msgs {
-		lm := &LinkMessage{}
-		if err := (lm).UnmarshalBinary(nm.Data); err != nil {
-			return nil, nil, err
+		switch nm.Header.Type {
+		case rtmGetAddress, rtmDelAddress, rtmNewAddress:
+			m := &AddressMessage{}
+			if err := (m).UnmarshalBinary(nm.Data); err != nil {
+				return nil, nil, err
+			}
+			lmsgs = append(lmsgs, m)
+		case rtmGetLink, rtmDelLink, rtmNewLink, rtmSetLink:
+			m := &LinkMessage{}
+			if err := (m).UnmarshalBinary(nm.Data); err != nil {
+				return nil, nil, err
+			}
+			lmsgs = append(lmsgs, m)
+
 		}
 
-		lmsgs = append(lmsgs, lm)
 	}
 
 	return lmsgs, msgs, nil
