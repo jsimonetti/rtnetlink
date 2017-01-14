@@ -250,24 +250,12 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-func uint16tobyte(v uint16) []byte {
-	b := make([]byte, 2)
-	nlenc.PutUint16(b, v)
-	return b
-}
-
-func uint32tobyte(v uint32) []byte {
-	b := make([]byte, 4)
-	nlenc.PutUint32(b, v)
-	return b
-}
-
 // MarshalBinary marshals a LinkAttributes into a byte slice.
 func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 	return netlink.MarshalAttributes([]netlink.Attribute{
 		{
 			Type: iflaUnspec,
-			Data: uint16tobyte(0),
+			Data: nlenc.Uint16Bytes(0),
 		},
 		{
 			Type: iflaAddress,
@@ -283,11 +271,11 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 		},
 		{
 			Type: iflaMTU,
-			Data: uint32tobyte(a.MTU),
+			Data: nlenc.Uint32Bytes(a.MTU),
 		},
 		{
 			Type: iflaLink,
-			Data: uint32tobyte(a.Type),
+			Data: nlenc.Uint32Bytes(a.Type),
 		},
 		{
 			Type: iflaQdisc,
