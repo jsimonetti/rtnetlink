@@ -46,6 +46,7 @@ func TestConnExecute(t *testing.T) {
 	tc.receive = []netlink.Message{{
 		Header: netlink.Header{
 			Length: 16,
+			Type:   rtmNewLink,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
 		},
@@ -116,6 +117,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
+				Type:     rtmNewLink,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{
@@ -127,6 +129,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
+				Type:     rtmNewLink,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{
