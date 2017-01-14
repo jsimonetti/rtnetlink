@@ -97,13 +97,13 @@ func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, er
 
 	for _, nm := range msgs {
 		switch nm.Header.Type {
-		case rtmGetAddress, rtmDelAddress, rtmNewAddress:
+		case rtmNewAddress:
 			m := &AddressMessage{}
 			if err := (m).UnmarshalBinary(nm.Data); err != nil {
 				return nil, nil, err
 			}
 			lmsgs = append(lmsgs, m)
-		case rtmGetLink, rtmDelLink, rtmNewLink, rtmSetLink:
+		case rtmNewLink:
 			m := &LinkMessage{}
 			if err := (m).UnmarshalBinary(nm.Data); err != nil {
 				return nil, nil, err
