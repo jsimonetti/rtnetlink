@@ -95,23 +95,20 @@ func (c *Conn) Receive() ([]Message, []netlink.Message, error) {
 func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, error) {
 	lmsgs := make([]Message, 0, len(msgs))
 
+	var m Message
+
 	for _, nm := range msgs {
 		switch nm.Header.Type {
 		case rtmNewAddress:
-			m := &AddressMessage{}
-			if err := (m).UnmarshalBinary(nm.Data); err != nil {
-				return nil, nil, err
-			}
-			lmsgs = append(lmsgs, m)
+			m = &AddressMessage{}
 		case rtmNewLink:
-			m := &LinkMessage{}
-			if err := (m).UnmarshalBinary(nm.Data); err != nil {
-				return nil, nil, err
-			}
-			lmsgs = append(lmsgs, m)
-
+			m = &LinkMessage{}
 		}
 
+		if err := (m).UnmarshalBinary(nm.Data); err != nil {
+			return nil, nil, err
+		}
+		lmsgs = append(lmsgs, m)
 	}
 
 	return lmsgs, msgs, nil
