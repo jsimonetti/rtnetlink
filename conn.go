@@ -2,6 +2,7 @@ package rtnetlink
 
 import (
 	"encoding"
+	"fmt"
 
 	"github.com/mdlayher/netlink"
 )
@@ -95,14 +96,14 @@ func (c *Conn) Receive() ([]Message, []netlink.Message, error) {
 func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, error) {
 	lmsgs := make([]Message, 0, len(msgs))
 
-	var m Message
-
 	for _, nm := range msgs {
+		var m Message
 		switch nm.Header.Type {
-		case rtmNewAddress:
-			m = &AddressMessage{}
 		case rtmNewLink:
 			m = &LinkMessage{}
+		case rtmNewAddress:
+			fmt.Printf("%#v\n", nm.Data)
+			m = &AddressMessage{}
 		}
 
 		if err := (m).UnmarshalBinary(nm.Data); err != nil {

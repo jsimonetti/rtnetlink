@@ -149,7 +149,6 @@ func (a *AddressService) List() ([]AddressMessage, error) {
 		address := (m).(*AddressMessage)
 		addresses = append(addresses, *address)
 	}
-
 	return addresses, nil
 }
 
