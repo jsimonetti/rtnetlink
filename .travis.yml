@@ -4,7 +4,6 @@ go:
   - tip
 os:
   - linux
-sudo: required
 before_install:
   - go get github.com/golang/lint/golint
   - go get -d ./...
