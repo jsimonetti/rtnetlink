@@ -67,7 +67,7 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	l := len(b)
-	if l < 16 {
+	if l < linkMessageLength {
 		return errInvalidLinkMessage
 	}
 
@@ -77,7 +77,7 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	m.Flags = nlenc.Uint32(b[8:12])
 	m.Change = nlenc.Uint32(b[12:16])
 
-	if l > 16 {
+	if l > linkMessageLength {
 		m.Attributes = LinkAttributes{}
 		err := m.Attributes.UnmarshalBinary(b[16:])
 		if err != nil {

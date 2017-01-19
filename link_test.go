@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestMessageMarshalBinary(t *testing.T) {
+func TestLinkMessageMarshalBinary(t *testing.T) {
 	tests := []struct {
 		name string
 		m    Message
@@ -89,7 +89,7 @@ func TestMessageMarshalBinary(t *testing.T) {
 	}
 }
 
-func TestMessageUnmarshalBinary(t *testing.T) {
+func TestLinkMessageUnmarshalBinary(t *testing.T) {
 	tests := []struct {
 		name string
 		b    []byte
