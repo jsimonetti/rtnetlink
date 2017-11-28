@@ -98,10 +98,14 @@ func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, er
 	for _, nm := range msgs {
 		var m Message
 		switch nm.Header.Type {
-		case rtmNewLink:
+		case rtmNewLink: fallthrough
+		case rtmDelLink :
 			m = &LinkMessage{}
-		case rtmNewAddress:
+		case rtmNewAddress: fallthrough
+		case rtmDelAddress:
 			m = &AddressMessage{}
+		default:
+			continue
 		}
 
 		if err := (m).UnmarshalBinary(nm.Data); err != nil {
