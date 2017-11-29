@@ -4,10 +4,15 @@ import (
 	"encoding"
 
 	"github.com/mdlayher/netlink"
+	"syscall"
 )
 
-// Protocol is the netlink protocol constant used to specify rtnetlink.
-const Protocol = 0x0
+const (
+	// Protocol is the netlink protocol constant used to specify rtnetlink.
+	Protocol = 0x0
+
+	RTNLGRP_LINK = syscall.RTNLGRP_LINK
+	)
 
 // A Conn is a route netlink connection. A Conn can be used to send and
 // receive route netlink messages to and from netlink.
@@ -98,8 +103,8 @@ func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, er
 	for _, nm := range msgs {
 		var m Message
 		switch nm.Header.Type {
-		case rtmNewLink: fallthrough
-		case rtmDelLink :
+		case RTM_GETLINK: fallthrough
+		case RTM_DELLINK:
 			m = &LinkMessage{}
 		case rtmNewAddress: fallthrough
 		case rtmDelAddress:

@@ -16,7 +16,7 @@ func TestConnExecute(t *testing.T) {
 
 	wantnl := netlink.Message{
 		Header: netlink.Header{
-			Type:  rtmGetLink,
+			Type:  RTM_GETLINK,
 			Flags: netlink.HeaderFlagsRequest,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
@@ -46,7 +46,7 @@ func TestConnExecute(t *testing.T) {
 	tc.receive = []netlink.Message{{
 		Header: netlink.Header{
 			Length: 16,
-			Type:   rtmNewLink,
+			Type:   RTM_GETLINK,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
 		},
@@ -56,7 +56,7 @@ func TestConnExecute(t *testing.T) {
 		},
 	}}
 
-	msgs, err := c.Execute(req, rtmGetLink, netlink.HeaderFlagsRequest)
+	msgs, err := c.Execute(req, RTM_GETLINK, netlink.HeaderFlagsRequest)
 	if err != nil {
 		t.Fatalf("failed to execute: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestConnSend(t *testing.T) {
 
 	c, tc := testConn(t)
 
-	nlreq, err := c.Send(req, rtmGetLink, netlink.HeaderFlagsRequest)
+	nlreq, err := c.Send(req, RTM_GETLINK, netlink.HeaderFlagsRequest)
 	if err != nil {
 		t.Fatalf("failed to send: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestConnSend(t *testing.T) {
 
 	want := netlink.Message{
 		Header: netlink.Header{
-			Type:  rtmGetLink,
+			Type:  RTM_GETLINK,
 			Flags: netlink.HeaderFlagsRequest,
 		},
 		Data: reqb,
@@ -117,7 +117,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
-				Type:     rtmNewLink,
+				Type:     RTM_GETLINK,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{
@@ -129,7 +129,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
-				Type:     rtmNewLink,
+				Type:     RTM_GETLINK,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{

@@ -7,6 +7,7 @@ import (
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
+	"syscall"
 )
 
 var (
@@ -98,16 +99,16 @@ type LinkService struct {
 
 // Constants used to request information from rtnetlink links.
 const (
-	rtmNewLink = 16
-	rtmDelLink = 17
-	rtmGetLink = 18
-	rtmSetLink = 19
+	RTM_GETLINK = syscall.RTM_GETLINK
+	RTM_NEWLINK = syscall.RTM_NEWLINK
+	RTM_DELLINK = syscall.RTM_DELLINK
+	RTM_SETLINK = syscall.RTM_SETLINK
 )
 
 // New creates a new interface using the LinkMessage information.
 func (l *LinkService) New(req *LinkMessage) error {
 	flags := netlink.HeaderFlagsRequest
-	_, err := l.c.Send(req, rtmSetLink, flags)
+	_, err := l.c.Send(req, RTM_SETLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -122,7 +123,7 @@ func (l *LinkService) Delete(index uint32) error {
 	}
 
 	flags := netlink.HeaderFlagsRequest
-	_, err := l.c.Send(req, rtmDelLink, flags)
+	_, err := l.c.Send(req, RTM_DELLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -137,7 +138,7 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 	}
 
 	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDumpFiltered
-	msg, err := l.c.Execute(req, rtmGetLink, flags)
+	msg, err := l.c.Execute(req, RTM_GETLINK, flags)
 	if err != nil {
 		return LinkMessage{}, err
 	}
@@ -153,7 +154,7 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 // Set sets interface attributes according to the LinkMessage information.
 func (l *LinkService) Set(req *LinkMessage) error {
 	flags := netlink.HeaderFlagsRequest
-	_, err := l.c.Send(req, rtmSetLink, flags)
+	_, err := l.c.Send(req, RTM_SETLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -166,7 +167,7 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 	req := &LinkMessage{}
 
 	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
-	msgs, err := l.c.Execute(req, rtmGetLink, flags)
+	msgs, err := l.c.Execute(req, RTM_GETLINK, flags)
 	if err != nil {
 		return nil, err
 	}
