@@ -104,10 +104,12 @@ func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, er
 		var m Message
 		switch nm.Header.Type {
 		case RTM_GETLINK: fallthrough
+		case RTM_NEWLINK: fallthrough
 		case RTM_DELLINK:
 			m = &LinkMessage{}
-		case rtmNewAddress: fallthrough
-		case rtmDelAddress:
+		case RTM_GETADDR: fallthrough
+		case RTM_NEWADDR: fallthrough
+		case RTM_DELADDR:
 			m = &AddressMessage{}
 		default:
 			continue

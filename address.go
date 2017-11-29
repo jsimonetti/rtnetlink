@@ -7,6 +7,7 @@ import (
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
+	"syscall"
 )
 
 var (
@@ -100,15 +101,15 @@ type AddressService struct {
 
 // Constants used to request information from rtnetlink addresses.
 const (
-	rtmNewAddress = 20
-	rtmDelAddress = 21
-	rtmGetAddress = 22
+	RTM_NEWADDR = syscall.RTM_NEWADDR
+	RTM_DELADDR = syscall.RTM_DELADDR
+	RTM_GETADDR = syscall.RTM_GETADDR
 )
 
 // New creates a new address using the AddressMessage information.
 func (a *AddressService) New(req *AddressMessage) error {
 	flags := netlink.HeaderFlagsRequest
-	_, err := a.c.Send(req, rtmNewAddress, flags)
+	_, err := a.c.Send(req, RTM_NEWADDR, flags)
 	if err != nil {
 		return err
 	}
@@ -126,7 +127,7 @@ func (a *AddressService) Delete(address net.IP, index uint32) error {
 	}
 
 	flags := netlink.HeaderFlagsRequest
-	_, err := a.c.Send(req, rtmDelAddress, flags)
+	_, err := a.c.Send(req, RTM_DELADDR, flags)
 	if err != nil {
 		return err
 	}
@@ -139,7 +140,7 @@ func (a *AddressService) List() ([]AddressMessage, error) {
 	req := &AddressMessage{}
 
 	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
-	msgs, err := a.c.Execute(req, rtmGetAddress, flags)
+	msgs, err := a.c.Execute(req, RTM_GETADDR, flags)
 	if err != nil {
 		return nil, err
 	}
