@@ -99,10 +99,12 @@ type LinkService struct {
 
 // Constants used to request information from rtnetlink links.
 const (
-	RTM_GETLINK = syscall.RTM_GETLINK
-	RTM_NEWLINK = syscall.RTM_NEWLINK
-	RTM_DELLINK = syscall.RTM_DELLINK
-	RTM_SETLINK = syscall.RTM_SETLINK
+	RTNLGRP_LINK = 0x1
+
+	RTM_NEWLINK = 0x10
+	RTM_DELLINK = 0x11
+	RTM_GETLINK = 0x12
+	RTM_SETLINK = 0x13
 )
 
 // New creates a new interface using the LinkMessage information.

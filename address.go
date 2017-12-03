@@ -101,9 +101,12 @@ type AddressService struct {
 
 // Constants used to request information from rtnetlink addresses.
 const (
-	RTM_NEWADDR = syscall.RTM_NEWADDR
-	RTM_DELADDR = syscall.RTM_DELADDR
-	RTM_GETADDR = syscall.RTM_GETADDR
+	RTNLGRP_IPV4_IFADDR = 0x5
+	RTNLGRP_IPV6_IFADDR = 0x9
+
+	RTM_NEWADDR = 0x14
+	RTM_DELADDR = 0x15
+	RTM_GETADDR = 0x16
 )
 
 // New creates a new address using the AddressMessage information.

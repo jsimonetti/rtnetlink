@@ -10,9 +10,7 @@ import (
 const (
 	// Protocol is the netlink protocol constant used to specify rtnetlink.
 	Protocol = 0x0
-
-	RTNLGRP_LINK = syscall.RTNLGRP_LINK
-	)
+)
 
 // A Conn is a route netlink connection. A Conn can be used to send and
 // receive route netlink messages to and from netlink.
