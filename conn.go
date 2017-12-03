@@ -4,7 +4,6 @@ import (
 	"encoding"
 
 	"github.com/mdlayher/netlink"
-	"syscall"
 )
 
 const (

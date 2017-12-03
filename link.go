@@ -7,7 +7,6 @@ import (
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
-	"syscall"
 )
 
 var (
