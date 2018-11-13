@@ -217,12 +217,14 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 		case iflaUnspec:
 			//unused attribute
 		case iflaAddress:
-			if len(attr.Data) != 6 {
+			l := len(attr.Data)
+			if l < 4 || l > 32 {
 				return errInvalidLinkMessageAttr
 			}
 			a.Address = attr.Data
 		case iflaBroadcast:
-			if len(attr.Data) != 6 {
+			l := len(attr.Data)
+			if l < 4 || l > 32 {
 				return errInvalidLinkMessageAttr
 			}
 			a.Broadcast = attr.Data
