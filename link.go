@@ -184,14 +184,32 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 
 // LinkAttributes contains all attributes for an interface.
 type LinkAttributes struct {
-	Address   net.HardwareAddr // Interface L2 address
-	Broadcast net.HardwareAddr // L2 broadcast address
-	Name      string           // Device name
-	MTU       uint32           // MTU of the device
-	Type      uint32           // Link type
-	QueueDisc string           // Queueing discipline
-	Stats     *LinkStats       // Interface Statistics
+	Address          net.HardwareAddr // Interface L2 address
+	Broadcast        net.HardwareAddr // L2 broadcast address
+	Name             string           // Device name
+	MTU              uint32           // MTU of the device
+	Type             uint32           // Link type
+	QueueDisc        string           // Queueing discipline
+	OperationalState OperationalState // Interface operation state
+	Stats            *LinkStats       // Interface Statistics
+	Info             *LinkInfo        // Detailed Interface Information
 }
+
+// OperationalState represents an interface's operational state.
+type OperationalState uint8
+
+// Constants that represent operational state of an interface
+//
+// Adapted from https://elixir.bootlin.com/linux/v4.19.2/source/include/uapi/linux/if.h#L166
+const (
+	OperStateUnknown        OperationalState = iota // status could not be determined
+	OperStateNotPresent                             // down, due to some missing component (typically hardware)
+	OperStateDown                                   // down, either administratively or due to a fault
+	OperStateLowerLayerDown                         // down, due to lower-layer interfaces
+	OperStateTesting                                // operationally down, in some test mode
+	OperStateDormant                                // down, waiting for some external event
+	OperStateUp                                     // interface is in a state to send and receive packets
+)
 
 // Attribute IDs mapped to specific LinkAttribute fields.
 const (
@@ -203,6 +221,46 @@ const (
 	iflaLink
 	iflaQdisc
 	iflaStats
+	iflaCost
+	iflaPriority
+	iflaMaster
+	iflaWireless
+	iflaProtInfo
+	iflaTXQLen
+	iflaMap
+	iflaWeight
+	iflaOperState
+	iflaLinkMode
+	iflaLinkInfo
+	iflaNetNSPid
+	iflaIFAlias
+	iflaNumVF
+	iflaVFInfoList
+	iflaStats64
+	iflaVFPorts
+	iflaPortSelf
+	iflaAFSpec
+	iflaGroup
+	iflaNetNSFD
+	iflaExtMask
+	iflaPromiscuity
+	iflaNumTXQueues
+	iflaNumRXQueues
+	iflaCarrier
+	iflaPhysPortID
+	iflaCarrierChanges
+	iflaPhysSwitchID
+	iflaProtoDown
+	iflaGSOMaxSegs
+	iflaGSOMaxSize
+	iflaPad
+	iflaXDP
+	iflaEvent
+	iflaNewNetNSID
+	iflaIfNetNSID
+	iflaCarrierUpCount
+	iflaCarrierDownCount
+	iflaNewIFIndex
 )
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
@@ -242,9 +300,17 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 			a.Type = nlenc.Uint32(attr.Data)
 		case iflaQdisc:
 			a.QueueDisc = nlenc.String(attr.Data)
+		case iflaOperState:
+			a.OperationalState = OperationalState(nlenc.Uint8(attr.Data))
 		case iflaStats:
 			a.Stats = &LinkStats{}
 			err := a.Stats.UnmarshalBinary(attr.Data)
+			if err != nil {
+				return err
+			}
+		case iflaLinkInfo:
+			a.Info = &LinkInfo{}
+			err := a.Info.UnmarshalBinary(attr.Data)
 			if err != nil {
 				return err
 			}
@@ -256,7 +322,7 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 
 // MarshalBinary marshals a LinkAttributes into a byte slice.
 func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
-	return netlink.MarshalAttributes([]netlink.Attribute{
+	attrs := []netlink.Attribute{
 		{
 			Type: iflaUnspec,
 			Data: nlenc.Uint16Bytes(0),
@@ -291,7 +357,27 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 				Data: nlenc.Bytes(name),
 			},
 		*/
-	})
+	}
+
+	if a.OperationalState != OperStateUnknown {
+		attrs = append(attrs, netlink.Attribute{
+			Type: iflaOperState,
+			Data: nlenc.Uint8Bytes(uint8(a.OperationalState)),
+		})
+	}
+
+	if a.Info != nil {
+		info, err := a.Info.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+		attrs = append(attrs, netlink.Attribute{
+			Type: iflaLinkInfo,
+			Data: info,
+		})
+	}
+
+	return netlink.MarshalAttributes(attrs)
 }
 
 //LinkStats contains packet statistics
@@ -370,4 +456,72 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 	}
 
 	return nil
+}
+
+const (
+	iflaInfoUnspec uint16 = iota
+	iflaInfoKind
+	iflaInfoData
+	iflaInfoSlaveKind
+	iflaInfoSlaveData
+)
+
+// LinkInfo contains data for specific network types
+type LinkInfo struct {
+	Kind      string // Driver name
+	Data      []byte // Driver specific configuration stored as nested Netlink messages
+	SlaveKind string // Slave driver name
+	SlaveData []byte // Slave driver specific configuration
+}
+
+// UnmarshalBinary unmarshals the contents of a byte slice into a LinkInfo.
+func (i *LinkInfo) UnmarshalBinary(b []byte) error {
+	attrs, err := netlink.UnmarshalAttributes(b)
+	if err != nil {
+		return err
+	}
+
+	for _, attr := range attrs {
+		switch attr.Type {
+		case iflaInfoKind:
+			i.Kind = nlenc.String(attr.Data)
+		case iflaInfoSlaveKind:
+			i.SlaveKind = nlenc.String(attr.Data)
+		case iflaInfoData:
+			i.Data = attr.Data
+		case iflaInfoSlaveData:
+			i.SlaveData = attr.Data
+		}
+	}
+
+	return nil
+}
+
+// MarshalBinary marshals a LinkInfo into a byte slice.
+func (i *LinkInfo) MarshalBinary() ([]byte, error) {
+	attrs := []netlink.Attribute{
+		{
+			Type: iflaInfoKind,
+			Data: nlenc.Bytes(i.Kind),
+		},
+		{
+			Type: iflaInfoData,
+			Data: i.Data,
+		},
+	}
+
+	if len(i.SlaveData) > 0 {
+		attrs = append(attrs,
+			netlink.Attribute{
+				Type: iflaInfoSlaveKind,
+				Data: nlenc.Bytes(i.SlaveKind),
+			},
+			netlink.Attribute{
+				Type: iflaInfoSlaveData,
+				Data: i.SlaveData,
+			},
+		)
+	}
+
+	return netlink.MarshalAttributes(attrs)
 }
