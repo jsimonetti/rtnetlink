@@ -108,8 +108,8 @@ const (
 
 // New creates a new interface using the LinkMessage information.
 func (l *LinkService) New(req *LinkMessage) error {
-	flags := netlink.HeaderFlagsRequest
-	_, err := l.c.Send(req, RTM_SETLINK, flags)
+	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsCreate | netlink.HeaderFlagsAcknowledge | netlink.HeaderFlagsExcl
+	_, err := l.c.Execute(req, RTM_NEWLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -123,8 +123,8 @@ func (l *LinkService) Delete(index uint32) error {
 		Index: index,
 	}
 
-	flags := netlink.HeaderFlagsRequest
-	_, err := l.c.Send(req, RTM_DELLINK, flags)
+	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge
+	_, err := l.c.Execute(req, RTM_DELLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -154,8 +154,8 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 
 // Set sets interface attributes according to the LinkMessage information.
 func (l *LinkService) Set(req *LinkMessage) error {
-	flags := netlink.HeaderFlagsRequest
-	_, err := l.c.Send(req, RTM_SETLINK, flags)
+	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge
+	_, err := l.c.Execute(req, RTM_SETLINK, flags)
 	if err != nil {
 		return err
 	}
