@@ -100,7 +100,7 @@ const (
 
 // Add new route
 func (r *RouteService) Add(req *RouteMessage) error {
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsCreate | netlink.HeaderFlagsAcknowledge | netlink.HeaderFlagsExcl
+	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
 	_, err := r.c.Execute(req, RTM_NEWROUTE, flags)
 	if err != nil {
 		return err
@@ -111,7 +111,7 @@ func (r *RouteService) Add(req *RouteMessage) error {
 
 // Delete existing route
 func (r *RouteService) Delete(req *RouteMessage) error {
-	flags := netlink.HeaderFlagsRequest
+	flags := netlink.Request
 	_, err := r.c.Send(req, RTM_DELROUTE, flags)
 	if err != nil {
 		return err
@@ -124,7 +124,7 @@ func (r *RouteService) Delete(req *RouteMessage) error {
 func (r *RouteService) List() ([]RouteMessage, error) {
 	req := &RouteMessage{}
 
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
+	flags := netlink.Request | netlink.Dump
 	msgs, err := r.c.Execute(req, RTM_GETROUTE, flags)
 	if err != nil {
 		return nil, err
