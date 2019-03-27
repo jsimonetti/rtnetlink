@@ -116,6 +116,10 @@ func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, er
 			m = &AddressMessage{}
 		case RTM_NEWROUTE:
 			m = &RouteMessage{}
+		case RTM_DELROUTE:
+			fallthrough
+		case RTM_GETROUTE:
+			fallthrough
 		default:
 			continue
 		}
