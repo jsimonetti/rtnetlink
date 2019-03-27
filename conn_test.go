@@ -17,7 +17,7 @@ func TestConnExecute(t *testing.T) {
 	wantnl := netlink.Message{
 		Header: netlink.Header{
 			Type:  RTM_GETLINK,
-			Flags: netlink.HeaderFlagsRequest,
+			Flags: netlink.Request,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
 		},
@@ -56,7 +56,7 @@ func TestConnExecute(t *testing.T) {
 		},
 	}}
 
-	msgs, err := c.Execute(req, RTM_GETLINK, netlink.HeaderFlagsRequest)
+	msgs, err := c.Execute(req, RTM_GETLINK, netlink.Request)
 	if err != nil {
 		t.Fatalf("failed to execute: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestConnSend(t *testing.T) {
 
 	c, tc := testConn(t)
 
-	nlreq, err := c.Send(req, RTM_GETLINK, netlink.HeaderFlagsRequest)
+	nlreq, err := c.Send(req, RTM_GETLINK, netlink.Request)
 	if err != nil {
 		t.Fatalf("failed to send: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestConnSend(t *testing.T) {
 	want := netlink.Message{
 		Header: netlink.Header{
 			Type:  RTM_GETLINK,
-			Flags: netlink.HeaderFlagsRequest,
+			Flags: netlink.Request,
 		},
 		Data: reqb,
 	}
