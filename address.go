@@ -75,8 +75,8 @@ func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 
 	m.Family = uint8(b[0])
 	m.PrefixLength = uint8(b[1])
-	m.Flags = uint8(b[3])
-	m.Scope = uint8(b[4])
+	m.Flags = uint8(b[2])
+	m.Scope = uint8(b[3])
 	m.Index = nlenc.Uint32(b[4:8])
 
 	if l > addressMessageLength {
@@ -110,7 +110,7 @@ const (
 
 // New creates a new address using the AddressMessage information.
 func (a *AddressService) New(req *AddressMessage) error {
-	flags := netlink.HeaderFlagsRequest
+	flags := netlink.Request
 	_, err := a.c.Send(req, RTM_NEWADDR, flags)
 	if err != nil {
 		return err
@@ -128,7 +128,7 @@ func (a *AddressService) Delete(address net.IP, index uint32) error {
 		},
 	}
 
-	flags := netlink.HeaderFlagsRequest
+	flags := netlink.Request
 	_, err := a.c.Send(req, RTM_DELADDR, flags)
 	if err != nil {
 		return err
@@ -141,7 +141,7 @@ func (a *AddressService) Delete(address net.IP, index uint32) error {
 func (a *AddressService) List() ([]AddressMessage, error) {
 	req := &AddressMessage{}
 
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
+	flags := netlink.Request | netlink.Dump
 	msgs, err := a.c.Execute(req, RTM_GETADDR, flags)
 	if err != nil {
 		return nil, err

@@ -17,6 +17,7 @@ type Conn struct {
 	c       conn
 	Link    *LinkService
 	Address *AddressService
+	Route   *RouteService
 }
 
 var _ conn = &netlink.Conn{}
@@ -48,6 +49,7 @@ func newConn(c conn) *Conn {
 
 	rtc.Link = &LinkService{c: rtc}
 	rtc.Address = &AddressService{c: rtc}
+	rtc.Route = &RouteService{c: rtc}
 
 	return rtc
 }
@@ -100,14 +102,24 @@ func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, er
 	for _, nm := range msgs {
 		var m Message
 		switch nm.Header.Type {
-		case RTM_GETLINK: fallthrough
-		case RTM_NEWLINK: fallthrough
+		case RTM_GETLINK:
+			fallthrough
+		case RTM_NEWLINK:
+			fallthrough
 		case RTM_DELLINK:
 			m = &LinkMessage{}
-		case RTM_GETADDR: fallthrough
-		case RTM_NEWADDR: fallthrough
+		case RTM_GETADDR:
+			fallthrough
+		case RTM_NEWADDR:
+			fallthrough
 		case RTM_DELADDR:
 			m = &AddressMessage{}
+		case RTM_GETROUTE:
+			fallthrough
+		case RTM_NEWROUTE:
+			fallthrough
+		case RTM_DELROUTE:
+			m = &RouteMessage{}
 		default:
 			continue
 		}

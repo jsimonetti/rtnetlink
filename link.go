@@ -108,7 +108,7 @@ const (
 
 // New creates a new interface using the LinkMessage information.
 func (l *LinkService) New(req *LinkMessage) error {
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsCreate | netlink.HeaderFlagsAcknowledge | netlink.HeaderFlagsExcl
+	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
 	_, err := l.c.Execute(req, RTM_NEWLINK, flags)
 	if err != nil {
 		return err
@@ -123,7 +123,7 @@ func (l *LinkService) Delete(index uint32) error {
 		Index: index,
 	}
 
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge
+	flags := netlink.Request | netlink.Acknowledge
 	_, err := l.c.Execute(req, RTM_DELLINK, flags)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 		Index: index,
 	}
 
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDumpFiltered
+	flags := netlink.Request | netlink.DumpFiltered
 	msg, err := l.c.Execute(req, RTM_GETLINK, flags)
 	if err != nil {
 		return LinkMessage{}, err
@@ -154,7 +154,7 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 
 // Set sets interface attributes according to the LinkMessage information.
 func (l *LinkService) Set(req *LinkMessage) error {
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsAcknowledge
+	flags := netlink.Request | netlink.Acknowledge
 	_, err := l.c.Execute(req, RTM_SETLINK, flags)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func (l *LinkService) Set(req *LinkMessage) error {
 func (l *LinkService) List() ([]LinkMessage, error) {
 	req := &LinkMessage{}
 
-	flags := netlink.HeaderFlagsRequest | netlink.HeaderFlagsDump
+	flags := netlink.Request | netlink.Dump
 	msgs, err := l.c.Execute(req, RTM_GETLINK, flags)
 	if err != nil {
 		return nil, err
