@@ -75,8 +75,8 @@ func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 
 	m.Family = uint8(b[0])
 	m.PrefixLength = uint8(b[1])
-	m.Flags = uint8(b[3])
-	m.Scope = uint8(b[4])
+	m.Flags = uint8(b[2])
+	m.Scope = uint8(b[3])
 	m.Index = nlenc.Uint32(b[4:8])
 
 	if l > addressMessageLength {
