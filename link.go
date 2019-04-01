@@ -328,14 +328,6 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 			Data: nlenc.Uint16Bytes(0),
 		},
 		{
-			Type: iflaAddress,
-			Data: a.Address,
-		},
-		{
-			Type: iflaBroadcast,
-			Data: a.Broadcast,
-		},
-		{
 			Type: iflaIfname,
 			Data: nlenc.Bytes(a.Name),
 		},
@@ -357,6 +349,20 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 				Data: nlenc.Bytes(name),
 			},
 		*/
+	}
+
+	if len(a.Address) != 0 {
+		attrs = append(attrs, netlink.Attribute{
+			Type: iflaAddress,
+			Data: a.Address,
+		})
+	}
+
+	if len(a.Broadcast) != 0 {
+		attrs = append(attrs, netlink.Attribute{
+			Type: iflaBroadcast,
+			Data: a.Broadcast,
+		})
 	}
 
 	if a.OperationalState != OperStateUnknown {
