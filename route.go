@@ -5,9 +5,7 @@ import (
 	"net"
 
 	"github.com/mdlayher/netlink"
-
 	"github.com/mdlayher/netlink/nlenc"
-	"golang.org/x/sys/unix"
 )
 
 var (
@@ -18,7 +16,7 @@ var (
 	errInvalidRouteMessageAttr = errors.New("rtnetlink RouteMessage has a wrong attribute data length")
 )
 
-// var _ Message = &RouteMessage{}
+var _ Message = &RouteMessage{}
 
 type RouteMessage struct {
 	Family    uint8 // Address family (current AFInet or AFInet6)
@@ -37,7 +35,7 @@ type RouteMessage struct {
 const routeMessageLength = 12
 
 func (m *RouteMessage) MarshalBinary() ([]byte, error) {
-	b := make([]byte, unix.SizeofRtMsg)
+	b := make([]byte, routeMessageLength)
 
 	b[0] = m.Family
 	b[1] = m.DstLength
