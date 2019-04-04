@@ -301,6 +301,9 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 		case iflaQdisc:
 			a.QueueDisc = nlenc.String(attr.Data)
 		case iflaOperState:
+			if len(attr.Data) != 1 {
+				return errInvalidLinkMessageAttr
+			}
 			a.OperationalState = OperationalState(nlenc.Uint8(attr.Data))
 		case iflaStats:
 			a.Stats = &LinkStats{}
