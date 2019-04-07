@@ -1,4 +1,4 @@
-module github.com/jsimonetti/rtnetlink
+module github.com/OrdnanceNetworks/rtnetlink
 
 go 1.12
 
