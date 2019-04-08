@@ -2,6 +2,7 @@ package rtnetlink
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -359,6 +360,138 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 				t.Fatalf("unexpected error:\n- want: %v\n-  got: %v", want, got)
 			}
 			if err != nil {
+				return
+			}
+
+			if want, got := tt.m, m; !reflect.DeepEqual(want, got) {
+				t.Fatalf("unexpected Message:\n- want: %#v\n-  got: %#v", want, got)
+			}
+		})
+	}
+}
+
+func TestLinkStatsUnmarshalBinary(t *testing.T) {
+	tests := []struct {
+		name string
+		b    []byte
+		m    *LinkStats
+		err  error
+	}{
+		{
+			name: "empty",
+			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+		},
+		{
+			name: "invalid < 92",
+			b:    make([]byte, 91),
+			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+		},
+		{
+			name: "invalid > 96",
+			b:    make([]byte, 97),
+			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+		},
+		{
+			name: "invalid > 92 < 96",
+			b:    make([]byte, 93),
+			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+		},
+		{
+			name: "kernel <4.6",
+			b: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+			},
+			m: &LinkStats{
+				RXPackets:         0,
+				TXPackets:         0,
+				RXBytes:           0,
+				TXBytes:           0,
+				RXErrors:          0,
+				TXErrors:          0,
+				RXDropped:         0,
+				TXDropped:         0,
+				Multicast:         0,
+				Collisions:        0,
+				RXLengthErrors:    0,
+				RXOverErrors:      0,
+				RXCRCErrors:       0,
+				RXFrameErrors:     0,
+				RXFIFOErrors:      0,
+				RXMissedErrors:    0,
+				TXAbortedErrors:   0,
+				TXCarrierErrors:   0,
+				TXFIFOErrors:      0,
+				TXHeartbeatErrors: 0,
+				TXWindowErrors:    0,
+				RXCompressed:      0,
+				TXCompressed:      0,
+			},
+		},
+		{
+			name: "kernel 4.6+",
+			b: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+			},
+			m: &LinkStats{
+				RXPackets:         0,
+				TXPackets:         0,
+				RXBytes:           0,
+				TXBytes:           0,
+				RXErrors:          0,
+				TXErrors:          0,
+				RXDropped:         0,
+				TXDropped:         0,
+				Multicast:         0,
+				Collisions:        0,
+				RXLengthErrors:    0,
+				RXOverErrors:      0,
+				RXCRCErrors:       0,
+				RXFrameErrors:     0,
+				RXFIFOErrors:      0,
+				RXMissedErrors:    0,
+				TXAbortedErrors:   0,
+				TXCarrierErrors:   0,
+				TXFIFOErrors:      0,
+				TXHeartbeatErrors: 0,
+				TXWindowErrors:    0,
+				RXCompressed:      0,
+				TXCompressed:      0,
+				RXNoHandler:       0,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &LinkStats{}
+			err := (m).UnmarshalBinary(tt.b)
+
+			if err != nil {
+				if want, got := fmt.Sprintf("%s", tt.err), fmt.Sprintf("%s", err); want != got {
+					t.Fatalf("unexpected error:\n- want: %v\n-  got: %v", want, got)
+				}
 				return
 			}
 

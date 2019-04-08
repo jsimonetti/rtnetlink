@@ -346,12 +346,6 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 			Type: iflaQdisc,
 			Data: nlenc.Bytes(a.QueueDisc),
 		},
-		/*
-			{
-				Type: iflaStats,
-				Data: nlenc.Bytes(name),
-			},
-		*/
 	}
 
 	if len(a.Address) != 0 {
@@ -426,8 +420,9 @@ type LinkStats struct {
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkStats) UnmarshalBinary(b []byte) error {
-	if len(b) != 92 && len(b) != 96 {
-		return fmt.Errorf("incorrect size, want: 92 or 96, got: %d", len(b))
+	l := len(b)
+	if l != 92 && l != 96 {
+		return fmt.Errorf("incorrect size, want: 92 or 96")
 	}
 
 	a.RXPackets = nlenc.Uint32(b[0:4])
@@ -457,7 +452,7 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 	a.RXCompressed = nlenc.Uint32(b[84:88])
 	a.TXCompressed = nlenc.Uint32(b[88:92])
 
-	if len(b) == 96 {
+	if l == 96 {
 		a.RXNoHandler = nlenc.Uint32(b[92:96])
 	}
 
