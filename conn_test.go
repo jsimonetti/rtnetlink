@@ -3,7 +3,6 @@ package rtnetlink
 import (
 	"encoding"
 	"fmt"
-	"net"
 	"os"
 	"reflect"
 	"testing"
@@ -30,15 +29,6 @@ func TestConnExecute(t *testing.T) {
 			Index:  0x4030201,
 			Flags:  0x101,
 			Change: 0x4030201,
-			Attributes: LinkAttributes{
-				Address:   net.HardwareAddr(nil),
-				Broadcast: net.HardwareAddr(nil),
-				Name:      "",
-				MTU:       0x0,
-				Type:      0x0,
-				QueueDisc: "",
-				Stats:     nil,
-			},
 		},
 	}
 
@@ -147,15 +137,6 @@ func TestConnReceive(t *testing.T) {
 			Index:  0x0,
 			Flags:  0x0,
 			Change: 0x0,
-			Attributes: LinkAttributes{
-				Address:   net.HardwareAddr(nil),
-				Broadcast: net.HardwareAddr(nil),
-				Name:      "",
-				MTU:       0x0,
-				Type:      0x0,
-				QueueDisc: "",
-				Stats:     nil,
-			},
 		},
 		{
 			Family: 0x102,
@@ -163,15 +144,6 @@ func TestConnReceive(t *testing.T) {
 			Index:  0x4030201,
 			Flags:  0x102,
 			Change: 0x4030201,
-			Attributes: LinkAttributes{
-				Address:   net.HardwareAddr(nil),
-				Broadcast: net.HardwareAddr(nil),
-				Name:      "",
-				MTU:       0x0,
-				Type:      0x0,
-				QueueDisc: "",
-				Stats:     nil,
-			},
 		},
 	}
 
