@@ -35,8 +35,7 @@ type LinkMessage struct {
 	// Contains device flags, see netdevice(7)
 	Flags uint32
 
-	// Change Flags, reserved for future use and should
-	// always be 0xffffffff
+	// Change Flags, specifies which flags will be affected by the Flags field
 	Change uint32
 
 	// Attributes List
@@ -54,7 +53,7 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	nlenc.PutUint16(b[2:4], m.Type)
 	nlenc.PutUint32(b[4:8], m.Index)
 	nlenc.PutUint32(b[8:12], m.Flags)
-	nlenc.PutUint32(b[12:16], 0) //Change, reserved
+	nlenc.PutUint32(b[12:16], m.Change)
 
 	a, err := m.Attributes.MarshalBinary()
 	if err != nil {
