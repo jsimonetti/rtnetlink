@@ -39,7 +39,7 @@ type LinkMessage struct {
 	Change uint32
 
 	// Attributes List
-	Attributes LinkAttributes
+	Attributes *LinkAttributes
 }
 
 const linkMessageLength = 16
@@ -55,12 +55,16 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	nlenc.PutUint32(b[8:12], m.Flags)
 	nlenc.PutUint32(b[12:16], m.Change)
 
-	a, err := m.Attributes.MarshalBinary()
-	if err != nil {
-		return nil, err
+	if m.Attributes != nil {
+		a, err := m.Attributes.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+
+		return append(b, a...), nil
 	}
 
-	return append(b, a...), nil
+	return b,nil
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
@@ -77,7 +81,7 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	m.Change = nlenc.Uint32(b[12:16])
 
 	if l > linkMessageLength {
-		m.Attributes = LinkAttributes{}
+		m.Attributes = &LinkAttributes{}
 		err := m.Attributes.UnmarshalBinary(b[16:])
 		if err != nil {
 			return err
