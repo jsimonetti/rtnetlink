@@ -110,8 +110,8 @@ const (
 
 // New creates a new address using the AddressMessage information.
 func (a *AddressService) New(req *AddressMessage) error {
-	flags := netlink.Request
-	_, err := a.c.Send(req, RTM_NEWADDR, flags)
+	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
+	_, err := a.c.Execute(req, RTM_NEWADDR, flags)
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 
 // MarshalBinary marshals a AddressAttributes into a byte slice.
 func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
-	return netlink.MarshalAttributes([]netlink.Attribute{
+	attrs := []netlink.Attribute{
 		{
 			Type: ifaUnspec,
 			Data: nlenc.Uint16Bytes(0),
@@ -246,10 +246,6 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 		{
 			Type: ifaAddress,
 			Data: a.Address,
-		},
-		{
-			Type: ifaLocal,
-			Data: a.Local,
 		},
 		{
 			Type: ifaBroadcast,
@@ -267,7 +263,16 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 			Type: ifaFlags,
 			Data: nlenc.Uint32Bytes(a.Flags),
 		},
-	})
+	}
+
+	if a.Local != nil {
+		attrs = append(attrs, netlink.Attribute{
+			Type: ifaLocal,
+			Data: a.Local,
+		})
+	}
+
+	return netlink.MarshalAttributes(attrs)
 }
 
 // CacheInfo contains address information
