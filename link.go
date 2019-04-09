@@ -346,12 +346,6 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 			Type: iflaQdisc,
 			Data: nlenc.Bytes(a.QueueDisc),
 		},
-		/*
-			{
-				Type: iflaStats,
-				Data: nlenc.Bytes(name),
-			},
-		*/
 	}
 
 	if len(a.Address) != 0 {
@@ -426,8 +420,9 @@ type LinkStats struct {
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkStats) UnmarshalBinary(b []byte) error {
-	if len(b) != 96 && len(b) != 104 {
-		return fmt.Errorf("incorrect size, want: 96 or 104, got: %d", len(b))
+	l := len(b)
+	if l != 92 && l != 96 {
+		return fmt.Errorf("incorrect size, want: 92 or 96")
 	}
 
 	a.RXPackets = nlenc.Uint32(b[0:4])
@@ -448,20 +443,17 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 	a.RXFIFOErrors = nlenc.Uint32(b[56:60])
 	a.RXMissedErrors = nlenc.Uint32(b[60:64])
 
-	a.TXAbortedErrors = nlenc.Uint32(b[68:72])
-	a.TXCarrierErrors = nlenc.Uint32(b[76:80])
-	a.TXFIFOErrors = nlenc.Uint32(b[80:84])
-	a.TXHeartbeatErrors = nlenc.Uint32(b[84:88])
-	a.TXWindowErrors = nlenc.Uint32(b[88:92])
+	a.TXAbortedErrors = nlenc.Uint32(b[64:68])
+	a.TXCarrierErrors = nlenc.Uint32(b[68:72])
+	a.TXFIFOErrors = nlenc.Uint32(b[72:76])
+	a.TXHeartbeatErrors = nlenc.Uint32(b[76:80])
+	a.TXWindowErrors = nlenc.Uint32(b[80:84])
 
-	if len(b) == 96 {
+	a.RXCompressed = nlenc.Uint32(b[84:88])
+	a.TXCompressed = nlenc.Uint32(b[88:92])
+
+	if l == 96 {
 		a.RXNoHandler = nlenc.Uint32(b[92:96])
-	}
-
-	if len(b) == 104 {
-		a.RXCompressed = nlenc.Uint32(b[92:96])
-		a.TXCompressed = nlenc.Uint32(b[96:100])
-		a.RXNoHandler = nlenc.Uint32(b[100:104])
 	}
 
 	return nil
