@@ -150,10 +150,6 @@ type AddressAttributes struct {
 	Flags     uint32    // Address flags
 }
 
-const (
-	IFA_FLAGS uint16 = 0x08 // TODO: missing constant from "golang.org/x/sys/unix"
-)
-
 // UnmarshalBinary unmarshals the contents of a byte slice into a AddressMessage.
 func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 	attrs, err := netlink.UnmarshalAttributes(b)
@@ -199,7 +195,7 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 				return errInvalidAddressMessageAttr
 			}
 			a.Multicast = attr.Data
-		case IFA_FLAGS:
+		case unix.IFA_FLAGS:
 			if len(attr.Data) != 4 {
 				return errInvalidAddressMessageAttr
 			}
@@ -234,7 +230,7 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 			Data: a.Multicast,
 		},
 		{
-			Type: IFA_FLAGS,
+			Type: unix.IFA_FLAGS,
 			Data: nlenc.Uint32Bytes(a.Flags),
 		},
 	}
