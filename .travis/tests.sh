@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# build a known user of this lib
+go get insomniacslk/dhcp/examples/client6/...
+cd "${GOPATH}/src/github.insomniacslk/dhcp"
+go build github.com/insomniacslk/dhcp/examples/client6/...
