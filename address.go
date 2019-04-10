@@ -7,6 +7,7 @@ import (
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -18,12 +19,6 @@ var (
 )
 
 var _ Message = &AddressMessage{}
-
-// Address family constants
-const (
-	AFInet  = 2
-	AFInet6 = 10
-)
 
 // A AddressMessage is a route netlink address message.
 type AddressMessage struct {
@@ -46,11 +41,9 @@ type AddressMessage struct {
 	Attributes AddressAttributes
 }
 
-const addressMessageLength = 8
-
 // MarshalBinary marshals a AddressMessage into a byte slice.
 func (m *AddressMessage) MarshalBinary() ([]byte, error) {
-	b := make([]byte, addressMessageLength)
+	b := make([]byte, unix.SizeofIfAddrmsg)
 
 	b[0] = m.Family
 	b[1] = m.PrefixLength
@@ -69,7 +62,7 @@ func (m *AddressMessage) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary unmarshals the contents of a byte slice into a AddressMessage.
 func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 	l := len(b)
-	if l < addressMessageLength {
+	if l < unix.SizeofIfAddrmsg {
 		return errInvalidAddressMessage
 	}
 
@@ -79,9 +72,9 @@ func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 	m.Scope = uint8(b[3])
 	m.Index = nlenc.Uint32(b[4:8])
 
-	if l > addressMessageLength {
+	if l > unix.SizeofIfAddrmsg {
 		m.Attributes = AddressAttributes{}
-		err := m.Attributes.UnmarshalBinary(b[addressMessageLength:])
+		err := m.Attributes.UnmarshalBinary(b[unix.SizeofIfAddrmsg:])
 		if err != nil {
 			return err
 		}
@@ -98,20 +91,10 @@ type AddressService struct {
 	c *Conn
 }
 
-// Constants used to request information from rtnetlink addresses.
-const (
-	RTNLGRP_IPV4_IFADDR = 0x5
-	RTNLGRP_IPV6_IFADDR = 0x9
-
-	RTM_NEWADDR = 0x14
-	RTM_DELADDR = 0x15
-	RTM_GETADDR = 0x16
-)
-
 // New creates a new address using the AddressMessage information.
 func (a *AddressService) New(req *AddressMessage) error {
 	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
-	_, err := a.c.Execute(req, RTM_NEWADDR, flags)
+	_, err := a.c.Execute(req, unix.RTM_NEWADDR, flags)
 	if err != nil {
 		return err
 	}
@@ -129,7 +112,7 @@ func (a *AddressService) Delete(address net.IP, index uint32) error {
 	}
 
 	flags := netlink.Request | netlink.Acknowledge
-	_, err := a.c.Execute(req, RTM_DELADDR, flags)
+	_, err := a.c.Execute(req, unix.RTM_DELADDR, flags)
 	if err != nil {
 		return err
 	}
@@ -142,7 +125,7 @@ func (a *AddressService) List() ([]AddressMessage, error) {
 	req := &AddressMessage{}
 
 	flags := netlink.Request | netlink.Dump
-	msgs, err := a.c.Execute(req, RTM_GETADDR, flags)
+	msgs, err := a.c.Execute(req, unix.RTM_GETADDR, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -167,17 +150,8 @@ type AddressAttributes struct {
 	Flags     uint32    // Address flags
 }
 
-// Attribute IDs mapped to specific LinkAttribute fields.
 const (
-	ifaUnspec uint16 = iota
-	ifaAddress
-	ifaLocal
-	ifaLabel
-	ifaBroadcast
-	ifaAnycast
-	ifaCacheInfo
-	ifaMulticast
-	ifaFlags
+	IFA_FLAGS uint16 = 0x08 // TODO: missing constant from "golang.org/x/sys/unix"
 )
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a AddressMessage.
@@ -188,31 +162,31 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 	}
 	for _, attr := range attrs {
 		switch attr.Type {
-		case iflaUnspec:
+		case unix.IFA_UNSPEC:
 			//unused attribute
-		case ifaAddress:
+		case unix.IFA_ADDRESS:
 			if len(attr.Data) != 4 && len(attr.Data) != 16 {
 				return errInvalidAddressMessageAttr
 			}
 			a.Address = attr.Data
-		case ifaLocal:
+		case unix.IFA_LOCAL:
 			if len(attr.Data) != 4 {
 				return errInvalidAddressMessageAttr
 			}
 			a.Local = attr.Data
-		case ifaLabel:
+		case unix.IFA_LABEL:
 			a.Label = nlenc.String(attr.Data)
-		case ifaBroadcast:
+		case unix.IFA_BROADCAST:
 			if len(attr.Data) != 4 {
 				return errInvalidAddressMessageAttr
 			}
 			a.Broadcast = attr.Data
-		case ifaAnycast:
+		case unix.IFA_ANYCAST:
 			if len(attr.Data) != 4 && len(attr.Data) != 16 {
 				return errInvalidAddressMessageAttr
 			}
 			a.Anycast = attr.Data
-		case ifaCacheInfo:
+		case unix.IFA_CACHEINFO:
 			if len(attr.Data) != 16 {
 				return errInvalidAddressMessageAttr
 			}
@@ -220,12 +194,12 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 			if err != nil {
 				return err
 			}
-		case ifaMulticast:
+		case unix.IFA_MULTICAST:
 			if len(attr.Data) != 4 && len(attr.Data) != 16 {
 				return errInvalidAddressMessageAttr
 			}
 			a.Multicast = attr.Data
-		case ifaFlags:
+		case IFA_FLAGS:
 			if len(attr.Data) != 4 {
 				return errInvalidAddressMessageAttr
 			}
@@ -240,31 +214,31 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 	return netlink.MarshalAttributes([]netlink.Attribute{
 		{
-			Type: ifaUnspec,
+			Type: unix.IFA_UNSPEC,
 			Data: nlenc.Uint16Bytes(0),
 		},
 		{
-			Type: ifaAddress,
+			Type: unix.IFA_ADDRESS,
 			Data: a.Address,
 		},
 		{
-			Type: ifaLocal,
+			Type: unix.IFA_LOCAL,
 			Data: a.Local,
 		},
 		{
-			Type: ifaBroadcast,
+			Type: unix.IFA_BROADCAST,
 			Data: a.Broadcast,
 		},
 		{
-			Type: ifaAnycast,
+			Type: unix.IFA_ANYCAST,
 			Data: a.Anycast,
 		},
 		{
-			Type: ifaMulticast,
+			Type: unix.IFA_MULTICAST,
 			Data: a.Multicast,
 		},
 		{
-			Type: ifaFlags,
+			Type: IFA_FLAGS,
 			Data: nlenc.Uint32Bytes(a.Flags),
 		},
 	})

@@ -5,6 +5,8 @@ import (
 	"net"
 	"reflect"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 // Tests will only pass on little endian machines
@@ -27,7 +29,7 @@ func TestRouteMessageMarshalBinary(t *testing.T) {
 		{
 			name: "no attributes",
 			m: &RouteMessage{
-				Family:    AFInet,
+				Family:    unix.AF_INET,
 				DstLength: 8,
 				Type:      RTN_UNICAST,
 			},

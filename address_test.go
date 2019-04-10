@@ -5,6 +5,8 @@ import (
 	"net"
 	"reflect"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 func TestAddressMessageMarshalBinary(t *testing.T) {
@@ -29,7 +31,7 @@ func TestAddressMessageMarshalBinary(t *testing.T) {
 		{
 			name: "no attributes",
 			m: &AddressMessage{
-				Family:       AFInet,
+				Family:       unix.AF_INET,
 				PrefixLength: 8,
 				Scope:        0,
 				Index:        1,
