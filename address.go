@@ -212,7 +212,7 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 
 // MarshalBinary marshals a AddressAttributes into a byte slice.
 func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
-	return netlink.MarshalAttributes([]netlink.Attribute{
+	attrs := []netlink.Attribute{
 		{
 			Type: unix.IFA_UNSPEC,
 			Data: nlenc.Uint16Bytes(0),
@@ -220,10 +220,6 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 		{
 			Type: unix.IFA_ADDRESS,
 			Data: a.Address,
-		},
-		{
-			Type: unix.IFA_LOCAL,
-			Data: a.Local,
 		},
 		{
 			Type: unix.IFA_BROADCAST,
@@ -241,7 +237,16 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 			Type: IFA_FLAGS,
 			Data: nlenc.Uint32Bytes(a.Flags),
 		},
-	})
+	}
+
+	if a.Local != nil {
+		attrs = append(attrs, netlink.Attribute{
+			Type: unix.IFA_LOCAL,
+			Data: a.Local,
+		})
+	}
+
+	return netlink.MarshalAttributes(attrs)
 }
 
 // CacheInfo contains address information
