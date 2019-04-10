@@ -172,7 +172,7 @@ func TestConnReceive(t *testing.T) {
 
 func testConn(t *testing.T) (*Conn, *testNetlinkConn) {
 	c := &testNetlinkConn{}
-	return NewConn(c), c
+	return newConn(c), c
 }
 
 type testNetlinkConn struct {
