@@ -57,9 +57,8 @@ const neighMsgLen = 12
 func (m *NeighMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, neighMsgLen)
 
-	b[0] = 0 //Family
-	b[1] = 0 //reserved
-	nlenc.PutUint16(b[2:4], m.Family)
+	nlenc.PutUint16(b[0:2], m.Family)
+	// bytes 3 and 4 are padding
 	nlenc.PutUint32(b[4:8], m.Index)
 	nlenc.PutUint16(b[8:10], m.State)
 	b[10] = m.Flags
@@ -83,7 +82,7 @@ func (m *NeighMessage) UnmarshalBinary(b []byte) error {
 		return errInvalidNeighMessage
 	}
 
-	m.Family = nlenc.Uint16(b[2:4])
+	m.Family = nlenc.Uint16(b[0:2])
 	m.Index = nlenc.Uint32(b[4:8])
 	m.State = nlenc.Uint16(b[8:10])
 	m.Flags = b[10]
