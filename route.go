@@ -109,8 +109,8 @@ func (r *RouteService) Add(req *RouteMessage) error {
 
 // Delete existing route
 func (r *RouteService) Delete(req *RouteMessage) error {
-	flags := netlink.Request
-	_, err := r.c.Send(req, RTM_DELROUTE, flags)
+	flags := netlink.Request | netlink.Acknowledge
+	_, err := r.c.Execute(req, RTM_DELROUTE, flags)
 	if err != nil {
 		return err
 	}
