@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/mdlayher/netlink"
+	"golang.org/x/sys/unix"
 )
 
 func TestConnExecute(t *testing.T) {
@@ -15,7 +16,7 @@ func TestConnExecute(t *testing.T) {
 
 	wantnl := netlink.Message{
 		Header: netlink.Header{
-			Type:  RTM_GETLINK,
+			Type:  unix.RTM_GETLINK,
 			Flags: netlink.Request,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
@@ -36,7 +37,7 @@ func TestConnExecute(t *testing.T) {
 	tc.receive = []netlink.Message{{
 		Header: netlink.Header{
 			Length: 16,
-			Type:   RTM_GETLINK,
+			Type:   unix.RTM_GETLINK,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
 		},
@@ -46,7 +47,7 @@ func TestConnExecute(t *testing.T) {
 		},
 	}}
 
-	msgs, err := c.Execute(req, RTM_GETLINK, netlink.Request)
+	msgs, err := c.Execute(req, unix.RTM_GETLINK, netlink.Request)
 	if err != nil {
 		t.Fatalf("failed to execute: %v", err)
 	}
@@ -72,7 +73,7 @@ func TestConnSend(t *testing.T) {
 
 	c, tc := testConn(t)
 
-	nlreq, err := c.Send(req, RTM_GETLINK, netlink.Request)
+	nlreq, err := c.Send(req, unix.RTM_GETLINK, netlink.Request)
 	if err != nil {
 		t.Fatalf("failed to send: %v", err)
 	}
@@ -84,7 +85,7 @@ func TestConnSend(t *testing.T) {
 
 	want := netlink.Message{
 		Header: netlink.Header{
-			Type:  RTM_GETLINK,
+			Type:  unix.RTM_GETLINK,
 			Flags: netlink.Request,
 		},
 		Data: reqb,
@@ -107,7 +108,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
-				Type:     RTM_GETLINK,
+				Type:     unix.RTM_GETLINK,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{
@@ -119,7 +120,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
-				Type:     RTM_GETLINK,
+				Type:     unix.RTM_GETLINK,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{

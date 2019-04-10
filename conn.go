@@ -4,11 +4,7 @@ import (
 	"encoding"
 
 	"github.com/mdlayher/netlink"
-)
-
-const (
-	// Protocol is the netlink protocol constant used to specify rtnetlink.
-	Protocol = 0x0
+	"golang.org/x/sys/unix"
 )
 
 // A Conn is a route netlink connection. A Conn can be used to send and
@@ -34,7 +30,7 @@ type conn interface {
 // configuration for the underlying netlink connection.  If config is
 // nil, a default configuration will be used.
 func Dial(config *netlink.Config) (*Conn, error) {
-	c, err := netlink.Dial(Protocol, config)
+	c, err := netlink.Dial(unix.NETLINK_ROUTE, config)
 	if err != nil {
 		return nil, err
 	}
@@ -162,23 +158,23 @@ func unpackMessages(msgs []netlink.Message) ([]Message, error) {
 	for _, nm := range msgs {
 		var m Message
 		switch nm.Header.Type {
-		case RTM_GETLINK:
+		case unix.RTM_GETLINK:
 			fallthrough
-		case RTM_NEWLINK:
+		case unix.RTM_NEWLINK:
 			fallthrough
-		case RTM_DELLINK:
+		case unix.RTM_DELLINK:
 			m = &LinkMessage{}
-		case RTM_GETADDR:
+		case unix.RTM_GETADDR:
 			fallthrough
-		case RTM_NEWADDR:
+		case unix.RTM_NEWADDR:
 			fallthrough
-		case RTM_DELADDR:
+		case unix.RTM_DELADDR:
 			m = &AddressMessage{}
-		case RTM_GETROUTE:
+		case unix.RTM_GETROUTE:
 			fallthrough
-		case RTM_NEWROUTE:
+		case unix.RTM_NEWROUTE:
 			fallthrough
-		case RTM_DELROUTE:
+		case unix.RTM_DELROUTE:
 			m = &RouteMessage{}
 		default:
 			continue
