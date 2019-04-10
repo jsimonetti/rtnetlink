@@ -3,12 +3,12 @@ package rtnetlink
 import (
 	"encoding"
 	"fmt"
-	"net"
 	"os"
 	"reflect"
 	"testing"
 
 	"github.com/mdlayher/netlink"
+	"golang.org/x/sys/unix"
 )
 
 func TestConnExecute(t *testing.T) {
@@ -16,7 +16,7 @@ func TestConnExecute(t *testing.T) {
 
 	wantnl := netlink.Message{
 		Header: netlink.Header{
-			Type:  RTM_GETLINK,
+			Type:  unix.RTM_GETLINK,
 			Flags: netlink.Request,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
@@ -30,15 +30,6 @@ func TestConnExecute(t *testing.T) {
 			Index:  0x4030201,
 			Flags:  0x101,
 			Change: 0x4030201,
-			Attributes: LinkAttributes{
-				Address:   net.HardwareAddr(nil),
-				Broadcast: net.HardwareAddr(nil),
-				Name:      "",
-				MTU:       0x0,
-				Type:      0x0,
-				QueueDisc: "",
-				Stats:     nil,
-			},
 		},
 	}
 
@@ -46,7 +37,7 @@ func TestConnExecute(t *testing.T) {
 	tc.receive = []netlink.Message{{
 		Header: netlink.Header{
 			Length: 16,
-			Type:   RTM_GETLINK,
+			Type:   unix.RTM_GETLINK,
 			// Sequence and PID not set because we are mocking the underlying
 			// netlink connection.
 		},
@@ -56,7 +47,7 @@ func TestConnExecute(t *testing.T) {
 		},
 	}}
 
-	msgs, err := c.Execute(req, RTM_GETLINK, netlink.Request)
+	msgs, err := c.Execute(req, unix.RTM_GETLINK, netlink.Request)
 	if err != nil {
 		t.Fatalf("failed to execute: %v", err)
 	}
@@ -82,7 +73,7 @@ func TestConnSend(t *testing.T) {
 
 	c, tc := testConn(t)
 
-	nlreq, err := c.Send(req, RTM_GETLINK, netlink.Request)
+	nlreq, err := c.Send(req, unix.RTM_GETLINK, netlink.Request)
 	if err != nil {
 		t.Fatalf("failed to send: %v", err)
 	}
@@ -94,7 +85,7 @@ func TestConnSend(t *testing.T) {
 
 	want := netlink.Message{
 		Header: netlink.Header{
-			Type:  RTM_GETLINK,
+			Type:  unix.RTM_GETLINK,
 			Flags: netlink.Request,
 		},
 		Data: reqb,
@@ -117,7 +108,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
-				Type:     RTM_GETLINK,
+				Type:     unix.RTM_GETLINK,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{
@@ -129,7 +120,7 @@ func TestConnReceive(t *testing.T) {
 			Header: netlink.Header{
 				Length:   16,
 				Sequence: 1,
-				Type:     RTM_GETLINK,
+				Type:     unix.RTM_GETLINK,
 				PID:      uint32(os.Getpid()),
 			},
 			Data: []byte{
@@ -147,15 +138,6 @@ func TestConnReceive(t *testing.T) {
 			Index:  0x0,
 			Flags:  0x0,
 			Change: 0x0,
-			Attributes: LinkAttributes{
-				Address:   net.HardwareAddr(nil),
-				Broadcast: net.HardwareAddr(nil),
-				Name:      "",
-				MTU:       0x0,
-				Type:      0x0,
-				QueueDisc: "",
-				Stats:     nil,
-			},
 		},
 		{
 			Family: 0x102,
@@ -163,15 +145,6 @@ func TestConnReceive(t *testing.T) {
 			Index:  0x4030201,
 			Flags:  0x102,
 			Change: 0x4030201,
-			Attributes: LinkAttributes{
-				Address:   net.HardwareAddr(nil),
-				Broadcast: net.HardwareAddr(nil),
-				Name:      "",
-				MTU:       0x0,
-				Type:      0x0,
-				QueueDisc: "",
-				Stats:     nil,
-			},
 		},
 	}
 
@@ -199,7 +172,7 @@ func TestConnReceive(t *testing.T) {
 
 func testConn(t *testing.T) (*Conn, *testNetlinkConn) {
 	c := &testNetlinkConn{}
-	return newConn(c), c
+	return NewConn(c), c
 }
 
 type testNetlinkConn struct {
@@ -218,11 +191,17 @@ func (c *testNetlinkConn) Receive() ([]netlink.Message, error) {
 	return c.receive, nil
 }
 
+func (c *testNetlinkConn) Execute(m netlink.Message) ([]netlink.Message, error) {
+	c.send = m
+	return c.receive, nil
+}
+
 type noopConn struct{}
 
-func (c *noopConn) Close() error                                    { return nil }
-func (c *noopConn) Send(m netlink.Message) (netlink.Message, error) { return netlink.Message{}, nil }
-func (c *noopConn) Receive() ([]netlink.Message, error)             { return nil, nil }
+func (c *noopConn) Close() error                                         { return nil }
+func (c *noopConn) Send(_ netlink.Message) (netlink.Message, error)      { return netlink.Message{}, nil }
+func (c *noopConn) Receive() ([]netlink.Message, error)                  { return nil, nil }
+func (c *noopConn) Execute(m netlink.Message) ([]netlink.Message, error) { return nil, nil }
 
 func mustMarshal(m encoding.BinaryMarshaler) []byte {
 	b, err := m.MarshalBinary()

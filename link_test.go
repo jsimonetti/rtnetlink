@@ -22,11 +22,6 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 			b: []byte{
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x05, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x08, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x08, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x05, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
@@ -41,11 +36,6 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 			b: []byte{
 				0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00,
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x05, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x08, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x08, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x05, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
@@ -60,17 +50,12 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 			b: []byte{
 				0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00,
 				0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x05, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x08, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x08, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x05, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
 			name: "attributes",
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{0x40, 0x41, 0x42, 0x43, 0x44, 0x45},
 					Broadcast: []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
 					Name:      "lo",
@@ -92,7 +77,7 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 		{
 			name: "attributes ipip",
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{10, 0, 0, 1},
 					Broadcast: []byte{255, 255, 255, 255},
 					Name:      "ipip",
@@ -114,7 +99,7 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 		{
 			name: "info",
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{0, 0, 0, 0, 0, 0},
 					Broadcast: []byte{0, 0, 0, 0, 0, 0},
 					Name:      "lo",
@@ -149,7 +134,7 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 		{
 			name: "operational state",
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:          []byte{10, 0, 0, 1},
 					Broadcast:        []byte{255, 255, 255, 255},
 					Name:             "ipip",
@@ -235,7 +220,7 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 				0x05, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 			},
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{0, 0, 0, 0, 0, 0},
 					Broadcast: []byte{0, 0, 0, 0, 0, 0},
 				},
@@ -261,7 +246,7 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 				Index:  2,
 				Flags:  0,
 				Change: 0,
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{0, 0, 0, 0, 0, 0},
 					Broadcast: []byte{0, 0, 0, 0, 0, 0},
 				},
@@ -282,7 +267,7 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 				0x05, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 			},
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{0, 0, 0, 0, 0, 0},
 					Broadcast: []byte{0, 0, 0, 0, 0, 0},
 					Name:      "lo",
@@ -304,7 +289,7 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 				0x00, 0x00, 0x00, 0x00,
 			},
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{10, 0, 0, 1},
 					Broadcast: []byte{255, 255, 255, 255},
 					Name:      "ipip",
@@ -333,7 +318,7 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 				0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00,
 			},
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:   []byte{0, 0, 0, 0, 0, 0},
 					Broadcast: []byte{0, 0, 0, 0, 0, 0},
 					Name:      "lo",
@@ -362,7 +347,7 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 				0x06, 0x00, 0x00, 0x00,
 			},
 			m: &LinkMessage{
-				Attributes: LinkAttributes{
+				Attributes: &LinkAttributes{
 					Address:          []byte{10, 0, 0, 1},
 					Broadcast:        []byte{255, 255, 255, 255},
 					Name:             "ipip",

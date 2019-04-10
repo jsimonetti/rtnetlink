@@ -4,11 +4,7 @@ import (
 	"encoding"
 
 	"github.com/mdlayher/netlink"
-)
-
-const (
-	// Protocol is the netlink protocol constant used to specify rtnetlink.
-	Protocol = 0x0
+	"golang.org/x/sys/unix"
 )
 
 // A Conn is a route netlink connection. A Conn can be used to send and
@@ -27,22 +23,27 @@ type conn interface {
 	Close() error
 	Send(m netlink.Message) (netlink.Message, error)
 	Receive() ([]netlink.Message, error)
+	Execute(m netlink.Message) ([]netlink.Message, error)
 }
 
 // Dial dials a route netlink connection.  Config specifies optional
 // configuration for the underlying netlink connection.  If config is
 // nil, a default configuration will be used.
 func Dial(config *netlink.Config) (*Conn, error) {
-	c, err := netlink.Dial(Protocol, config)
+	c, err := netlink.Dial(unix.NETLINK_ROUTE, config)
 	if err != nil {
 		return nil, err
 	}
 
-	return newConn(c), nil
+	return NewConn(c), nil
 }
 
-// newConn is the internal constructor for Conn, used in tests.
-func newConn(c conn) *Conn {
+// NewConn creates a Conn that wraps an existing *netlink.Conn for
+// generic netlink communications.
+//
+// NewConn is primarily useful for tests. Most applications should use
+// Dial instead.
+func NewConn(c conn) *Conn {
 	rtc := &Conn{
 		c: c,
 	}
@@ -92,69 +93,36 @@ func (c *Conn) Receive() ([]Message, []netlink.Message, error) {
 		return nil, nil, err
 	}
 
-	return messageUnmarshall(msgs)
-}
-
-// messageUnmarshall will unmarshal the message based on its type
-func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, error) {
-	lmsgs := make([]Message, 0, len(msgs))
-
-	for _, nm := range msgs {
-		var m Message
-		switch nm.Header.Type {
-		case RTM_GETLINK:
-			fallthrough
-		case RTM_NEWLINK:
-			fallthrough
-		case RTM_DELLINK:
-			m = &LinkMessage{}
-		case RTM_GETADDR:
-			fallthrough
-		case RTM_NEWADDR:
-			fallthrough
-		case RTM_DELADDR:
-			m = &AddressMessage{}
-		case RTM_GETROUTE:
-			fallthrough
-		case RTM_NEWROUTE:
-			fallthrough
-		case RTM_DELROUTE:
-			m = &RouteMessage{}
-		default:
-			continue
-		}
-
-		if err := (m).UnmarshalBinary(nm.Data); err != nil {
-			return nil, nil, err
-		}
-		lmsgs = append(lmsgs, m)
+	rtmsgs, err := unpackMessages(msgs)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return lmsgs, msgs, nil
+	return rtmsgs, msgs, nil
 }
 
-// Execute sends a single Message to netlink using Conn.Send, receives one or
-// more replies using Conn.Receive, and then checks the validity of the replies
-// against the request using netlink.Validate.
+// Execute sends a single Message to netlink using Send, receives one or more
+// replies using Receive, and then checks the validity of the replies against
+// the request using netlink.Validate.
 //
-// See the documentation of Conn.Send, Conn.Receive, and netlink.Validate for
-// details about each function.
+// Execute acquires a lock for the duration of the function call which blocks
+// concurrent calls to Send and Receive, in order to ensure consistency between
+// generic netlink request/reply messages.
+//
+// See the documentation of Send, Receive, and netlink.Validate for details
+// about each function.
 func (c *Conn) Execute(m Message, family uint16, flags netlink.HeaderFlags) ([]Message, error) {
-	req, err := c.Send(m, family, flags)
+	nm, err := packMessage(m, family, flags)
 	if err != nil {
 		return nil, err
 	}
 
-	msgs, replies, err := c.Receive()
+	msgs, err := c.c.Execute(nm)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := netlink.Validate(req, replies); err != nil {
-		return nil, err
-	}
-
-	return msgs, nil
+	return unpackMessages(msgs)
 }
 
 //Message is the interface used for passing around different kinds of rtnetlink messages
@@ -162,4 +130,61 @@ type Message interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
 	rtMessage()
+}
+
+// packMessage packs a rtnetlink Message into a netlink.Message with the
+// appropriate rtnetlink family and netlink flags.
+func packMessage(m Message, family uint16, flags netlink.HeaderFlags) (netlink.Message, error) {
+	nm := netlink.Message{
+		Header: netlink.Header{
+			Type:  netlink.HeaderType(family),
+			Flags: flags,
+		},
+	}
+
+	mb, err := m.MarshalBinary()
+	if err != nil {
+		return netlink.Message{}, err
+	}
+	nm.Data = mb
+
+	return nm, nil
+}
+
+// unpackMessages unpacks rtnetlink Messages from a slice of netlink.Messages.
+func unpackMessages(msgs []netlink.Message) ([]Message, error) {
+	lmsgs := make([]Message, 0, len(msgs))
+
+	for _, nm := range msgs {
+		var m Message
+		switch nm.Header.Type {
+		case unix.RTM_GETLINK:
+			fallthrough
+		case unix.RTM_NEWLINK:
+			fallthrough
+		case unix.RTM_DELLINK:
+			m = &LinkMessage{}
+		case unix.RTM_GETADDR:
+			fallthrough
+		case unix.RTM_NEWADDR:
+			fallthrough
+		case unix.RTM_DELADDR:
+			m = &AddressMessage{}
+		case unix.RTM_GETROUTE:
+			fallthrough
+		case unix.RTM_NEWROUTE:
+			fallthrough
+		case unix.RTM_DELROUTE:
+			m = &RouteMessage{}
+		default:
+			continue
+		}
+
+		if err := (m).UnmarshalBinary(nm.Data); err != nil {
+			return nil, err
+		}
+		lmsgs = append(lmsgs, m)
+	}
+
+	return lmsgs, nil
 }
