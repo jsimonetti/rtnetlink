@@ -35,15 +35,15 @@ func Dial(config *netlink.Config) (*Conn, error) {
 		return nil, err
 	}
 
-	return NewConn(c), nil
+	return newConn(c), nil
 }
 
-// NewConn creates a Conn that wraps an existing *netlink.Conn for
+// newConn creates a Conn that wraps an existing *netlink.Conn for
 // generic netlink communications.
 //
-// NewConn is primarily useful for tests. Most applications should use
+// newConn is primarily useful for tests. Most applications should use
 // Dial instead.
-func NewConn(c conn) *Conn {
+func newConn(c conn) *Conn {
 	rtc := &Conn{
 		c: c,
 	}
