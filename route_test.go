@@ -31,7 +31,7 @@ func TestRouteMessageMarshalBinary(t *testing.T) {
 			m: &RouteMessage{
 				Family:    unix.AF_INET,
 				DstLength: 8,
-				Type:      RTN_UNICAST,
+				Type:      unix.RTN_UNICAST,
 			},
 			b: []byte{
 				0x02, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
@@ -117,10 +117,10 @@ func TestRouteMessageUnmarshalBinary(t *testing.T) {
 			m: &RouteMessage{
 				Family:    2,
 				DstLength: 8,
-				Table:     RT_TABLE_MAIN,
-				Protocol:  RTPROT_STATIC,
-				Scope:     RT_SCOPE_UNIVERSE,
-				Type:      RTN_UNICAST,
+				Table:     unix.RT_TABLE_MAIN,
+				Protocol:  unix.RTPROT_STATIC,
+				Scope:     unix.RT_SCOPE_UNIVERSE,
+				Type:      unix.RTN_UNICAST,
 				Attributes: RouteAttributes{
 					Dst:      net.IP{0x0a, 0x00, 0x00, 0x00},
 					Src:      net.IP{0x0a, 0x64, 0x0a, 0x01},
