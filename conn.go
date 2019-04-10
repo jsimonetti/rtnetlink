@@ -27,6 +27,7 @@ type conn interface {
 	Close() error
 	Send(m netlink.Message) (netlink.Message, error)
 	Receive() ([]netlink.Message, error)
+	Execute(m netlink.Message) ([]netlink.Message, error)
 }
 
 // Dial dials a route netlink connection.  Config specifies optional
@@ -38,11 +39,15 @@ func Dial(config *netlink.Config) (*Conn, error) {
 		return nil, err
 	}
 
-	return newConn(c), nil
+	return NewConn(c), nil
 }
 
-// newConn is the internal constructor for Conn, used in tests.
-func newConn(c conn) *Conn {
+// NewConn creates a Conn that wraps an existing *netlink.Conn for
+// generic netlink communications.
+//
+// NewConn is primarily useful for tests. Most applications should use
+// Dial instead.
+func NewConn(c conn) *Conn {
 	rtc := &Conn{
 		c: c,
 	}
@@ -92,11 +97,66 @@ func (c *Conn) Receive() ([]Message, []netlink.Message, error) {
 		return nil, nil, err
 	}
 
-	return messageUnmarshall(msgs)
+	rtmsgs, err := unpackMessages(msgs)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return rtmsgs, msgs, nil
 }
 
-// messageUnmarshall will unmarshal the message based on its type
-func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, error) {
+// Execute sends a single Message to netlink using Send, receives one or more
+// replies using Receive, and then checks the validity of the replies against
+// the request using netlink.Validate.
+//
+// Execute acquires a lock for the duration of the function call which blocks
+// concurrent calls to Send and Receive, in order to ensure consistency between
+// generic netlink request/reply messages.
+//
+// See the documentation of Send, Receive, and netlink.Validate for details
+// about each function.
+func (c *Conn) Execute(m Message, family uint16, flags netlink.HeaderFlags) ([]Message, error) {
+	nm, err := packMessage(m, family, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	msgs, err := c.c.Execute(nm)
+	if err != nil {
+		return nil, err
+	}
+
+	return unpackMessages(msgs)
+}
+
+//Message is the interface used for passing around different kinds of rtnetlink messages
+type Message interface {
+	encoding.BinaryMarshaler
+	encoding.BinaryUnmarshaler
+	rtMessage()
+}
+
+// packMessage packs a rtnetlink Message into a netlink.Message with the
+// appropriate rtnetlink family and netlink flags.
+func packMessage(m Message, family uint16, flags netlink.HeaderFlags) (netlink.Message, error) {
+	nm := netlink.Message{
+		Header: netlink.Header{
+			Type:  netlink.HeaderType(family),
+			Flags: flags,
+		},
+	}
+
+	mb, err := m.MarshalBinary()
+	if err != nil {
+		return netlink.Message{}, err
+	}
+	nm.Data = mb
+
+	return nm, nil
+}
+
+// unpackMessages unpacks rtnetlink Messages from a slice of netlink.Messages.
+func unpackMessages(msgs []netlink.Message) ([]Message, error) {
 	lmsgs := make([]Message, 0, len(msgs))
 
 	for _, nm := range msgs {
@@ -125,41 +185,10 @@ func messageUnmarshall(msgs []netlink.Message) ([]Message, []netlink.Message, er
 		}
 
 		if err := (m).UnmarshalBinary(nm.Data); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		lmsgs = append(lmsgs, m)
 	}
 
-	return lmsgs, msgs, nil
-}
-
-// Execute sends a single Message to netlink using Conn.Send, receives one or
-// more replies using Conn.Receive, and then checks the validity of the replies
-// against the request using netlink.Validate.
-//
-// See the documentation of Conn.Send, Conn.Receive, and netlink.Validate for
-// details about each function.
-func (c *Conn) Execute(m Message, family uint16, flags netlink.HeaderFlags) ([]Message, error) {
-	req, err := c.Send(m, family, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	msgs, replies, err := c.Receive()
-	if err != nil {
-		return nil, err
-	}
-
-	if err := netlink.Validate(req, replies); err != nil {
-		return nil, err
-	}
-
-	return msgs, nil
-}
-
-//Message is the interface used for passing around different kinds of rtnetlink messages
-type Message interface {
-	encoding.BinaryMarshaler
-	encoding.BinaryUnmarshaler
-	rtMessage()
+	return lmsgs, nil
 }
