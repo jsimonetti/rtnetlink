@@ -222,10 +222,6 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 			Data: a.Address,
 		},
 		{
-			Type: unix.IFA_LOCAL,
-			Data: a.Local,
-		},
-		{
 			Type: unix.IFA_BROADCAST,
 			Data: a.Broadcast,
 		},
@@ -245,7 +241,7 @@ func (a *AddressAttributes) MarshalBinary() ([]byte, error) {
 
 	if a.Local != nil {
 		attrs = append(attrs, netlink.Attribute{
-			Type: ifaLocal,
+			Type: unix.IFA_LOCAL,
 			Data: a.Local,
 		})
 	}
