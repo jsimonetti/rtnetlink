@@ -37,6 +37,26 @@ const routeMessageLength = 12
 func (m *RouteMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, routeMessageLength)
 
+	// ensure that DstLength and SrcLength are correct
+	if m.Attributes.Dst != nil {
+		if m.Attributes.Dst.To4() != nil {
+			m.DstLength = 32
+		} else if m.Attributes.Dst.To16() != nil {
+			m.DstLength = 128
+		} else {
+			return nil, errInvalidRouteMessageAttr
+		}
+	}
+	if m.Attributes.Src != nil {
+		if m.Attributes.Src.To4() != nil {
+			m.SrcLength = 32
+		} else if m.Attributes.Src.To16() != nil {
+			m.SrcLength = 128
+		} else {
+			return nil, errInvalidRouteMessageAttr
+		}
+	}
+
 	b[0] = m.Family
 	b[1] = m.DstLength
 	b[2] = m.SrcLength
