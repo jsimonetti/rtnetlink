@@ -110,8 +110,8 @@ const (
 
 // New creates a new address using the AddressMessage information.
 func (a *AddressService) New(req *AddressMessage) error {
-	flags := netlink.Request
-	_, err := a.c.Send(req, RTM_NEWADDR, flags)
+	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
+	_, err := a.c.Execute(req, RTM_NEWADDR, flags)
 	if err != nil {
 		return err
 	}
@@ -128,8 +128,8 @@ func (a *AddressService) Delete(address net.IP, index uint32) error {
 		},
 	}
 
-	flags := netlink.Request
-	_, err := a.c.Send(req, RTM_DELADDR, flags)
+	flags := netlink.Request | netlink.Acknowledge
+	_, err := a.c.Execute(req, RTM_DELADDR, flags)
 	if err != nil {
 		return err
 	}

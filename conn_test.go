@@ -171,7 +171,7 @@ func TestConnReceive(t *testing.T) {
 
 func testConn(t *testing.T) (*Conn, *testNetlinkConn) {
 	c := &testNetlinkConn{}
-	return newConn(c), c
+	return NewConn(c), c
 }
 
 type testNetlinkConn struct {
@@ -190,11 +190,17 @@ func (c *testNetlinkConn) Receive() ([]netlink.Message, error) {
 	return c.receive, nil
 }
 
+func (c *testNetlinkConn) Execute(m netlink.Message) ([]netlink.Message, error) {
+	c.send = m
+	return c.receive, nil
+}
+
 type noopConn struct{}
 
-func (c *noopConn) Close() error                                    { return nil }
-func (c *noopConn) Send(m netlink.Message) (netlink.Message, error) { return netlink.Message{}, nil }
-func (c *noopConn) Receive() ([]netlink.Message, error)             { return nil, nil }
+func (c *noopConn) Close() error                                         { return nil }
+func (c *noopConn) Send(_ netlink.Message) (netlink.Message, error)      { return netlink.Message{}, nil }
+func (c *noopConn) Receive() ([]netlink.Message, error)                  { return nil, nil }
+func (c *noopConn) Execute(m netlink.Message) ([]netlink.Message, error) { return nil, nil }
 
 func mustMarshal(m encoding.BinaryMarshaler) []byte {
 	b, err := m.MarshalBinary()
