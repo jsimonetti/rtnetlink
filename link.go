@@ -48,8 +48,8 @@ const linkMessageLength = 16
 func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, linkMessageLength)
 
-	b[0] = 0 //Family
-	b[1] = 0 //reserved
+	b[0] = 0 // Family
+	b[1] = 0 // reserved
 	nlenc.PutUint16(b[2:4], m.Type)
 	nlenc.PutUint32(b[4:8], m.Index)
 	nlenc.PutUint32(b[8:12], m.Flags)
@@ -64,7 +64,7 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 		return append(b, a...), nil
 	}
 
-	return b,nil
+	return b, nil
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
@@ -276,7 +276,7 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 	for _, attr := range attrs {
 		switch attr.Type {
 		case iflaUnspec:
-			//unused attribute
+			// unused attribute
 		case iflaAddress:
 			l := len(attr.Data)
 			if l < 4 || l > 32 {
@@ -386,7 +386,7 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 	return netlink.MarshalAttributes(attrs)
 }
 
-//LinkStats contains packet statistics
+// LinkStats contains packet statistics
 type LinkStats struct {
 	RXPackets  uint32 // total packets received
 	TXPackets  uint32 // total packets transmitted

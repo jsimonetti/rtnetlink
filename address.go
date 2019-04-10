@@ -189,7 +189,7 @@ func (a *AddressAttributes) UnmarshalBinary(b []byte) error {
 	for _, attr := range attrs {
 		switch attr.Type {
 		case iflaUnspec:
-			//unused attribute
+			// unused attribute
 		case ifaAddress:
 			if len(attr.Data) != 4 && len(attr.Data) != 16 {
 				return errInvalidAddressMessageAttr

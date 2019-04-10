@@ -3,8 +3,8 @@
 package rtnetlink
 
 func Fuzz(data []byte) int {
-	//return fuzzLinkMessage(data)
-	//return fuzzAddressMessage(data)
+	// return fuzzLinkMessage(data)
+	// return fuzzAddressMessage(data)
 	return fuzzRouteMessage(data)
 }
 

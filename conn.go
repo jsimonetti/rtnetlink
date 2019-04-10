@@ -6,10 +6,8 @@ import (
 	"github.com/mdlayher/netlink"
 )
 
-const (
-	// Protocol is the netlink protocol constant used to specify rtnetlink.
-	Protocol = 0x0
-)
+// Protocol is the netlink protocol constant used to specify rtnetlink.
+const Protocol = 0x0
 
 // A Conn is a route netlink connection. A Conn can be used to send and
 // receive route netlink messages to and from netlink.
@@ -129,7 +127,7 @@ func (c *Conn) Execute(m Message, family uint16, flags netlink.HeaderFlags) ([]M
 	return unpackMessages(msgs)
 }
 
-//Message is the interface used for passing around different kinds of rtnetlink messages
+// Message is the interface used for passing around different kinds of rtnetlink messages
 type Message interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
