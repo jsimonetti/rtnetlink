@@ -5,6 +5,8 @@ import (
 	"net"
 	"reflect"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 // Tests will only pass on little endian machines
@@ -29,7 +31,7 @@ func TestNeighMessageMarshalBinary(t *testing.T) {
 			m: &NeighMessage{
 				Index: 2,
 				State: 64,
-				Type:  NTF_PROXY,
+				Type:  unix.NTF_PROXY,
 			},
 			b: []byte{
 				0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
@@ -41,7 +43,7 @@ func TestNeighMessageMarshalBinary(t *testing.T) {
 			m: &NeighMessage{
 				Index: 2,
 				State: 64,
-				Type:  NTF_PROXY,
+				Type:  unix.NTF_PROXY,
 				Attributes: &NeighAttributes{
 					Address:   net.ParseIP("10.0.0.0"),
 					LLAddress: []byte{0x33, 0x33, 0x00, 0x00, 0x00, 0x16},
@@ -119,7 +121,7 @@ func TestNeighMessageUnmarshalBinary(t *testing.T) {
 			m: &NeighMessage{
 				Index: 2,
 				State: 64,
-				Type:  NTF_PROXY,
+				Type:  unix.NTF_PROXY,
 			},
 		},
 	}
