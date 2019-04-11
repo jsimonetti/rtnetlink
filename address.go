@@ -22,7 +22,7 @@ var _ Message = &AddressMessage{}
 
 // A AddressMessage is a route netlink address message.
 type AddressMessage struct {
-	// Address family (current AFInet or AFInet6)
+	// Address family (current unix.AF_INET or unix.AF_INET6)
 	Family uint8
 
 	// Prefix length
