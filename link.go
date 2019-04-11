@@ -399,13 +399,6 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-const (
-	iflaInfoKind      = 0x1
-	iflaInfoData      = 0x2
-	iflaInfoSlaveKind = 0x3
-	iflaInfoSlaveData = 0x4
-)
-
 // LinkInfo contains data for specific network types
 type LinkInfo struct {
 	Kind      string // Driver name
@@ -423,13 +416,13 @@ func (i *LinkInfo) UnmarshalBinary(b []byte) error {
 
 	for _, attr := range attrs {
 		switch attr.Type {
-		case iflaInfoKind:
+		case unix.IFLA_INFO_KIND:
 			i.Kind = nlenc.String(attr.Data)
-		case iflaInfoSlaveKind:
+		case unix.IFLA_INFO_SLAVE_KIND:
 			i.SlaveKind = nlenc.String(attr.Data)
-		case iflaInfoData:
+		case unix.IFLA_INFO_DATA:
 			i.Data = attr.Data
-		case iflaInfoSlaveData:
+		case unix.IFLA_INFO_SLAVE_DATA:
 			i.SlaveData = attr.Data
 		}
 	}
@@ -441,11 +434,11 @@ func (i *LinkInfo) UnmarshalBinary(b []byte) error {
 func (i *LinkInfo) MarshalBinary() ([]byte, error) {
 	attrs := []netlink.Attribute{
 		{
-			Type: iflaInfoKind,
+			Type: unix.IFLA_INFO_KIND,
 			Data: nlenc.Bytes(i.Kind),
 		},
 		{
-			Type: iflaInfoData,
+			Type: unix.IFLA_INFO_DATA,
 			Data: i.Data,
 		},
 	}
@@ -453,11 +446,11 @@ func (i *LinkInfo) MarshalBinary() ([]byte, error) {
 	if len(i.SlaveData) > 0 {
 		attrs = append(attrs,
 			netlink.Attribute{
-				Type: iflaInfoSlaveKind,
+				Type: unix.IFLA_INFO_SLAVE_KIND,
 				Data: nlenc.Bytes(i.SlaveKind),
 			},
 			netlink.Attribute{
-				Type: iflaInfoSlaveData,
+				Type: unix.IFLA_INFO_SLAVE_DATA,
 				Data: i.SlaveData,
 			},
 		)
