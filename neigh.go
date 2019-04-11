@@ -41,21 +41,9 @@ type NeighMessage struct {
 	Attributes *NeighAttributes
 }
 
-const (
-	NTF_USE         = 0x01
-	NTF_SELF        = 0x02
-	NTF_MASTER      = 0x04
-	NTF_PROXY       = 0x08
-	NTF_EXT_LEARNED = 0x10
-	NTF_OFFLOADED   = 0x20
-	NTF_ROUTER      = 0x80
-)
-
-const neighMsgLen = 12
-
 // MarshalBinary marshals a NeighMessage into a byte slice.
 func (m *NeighMessage) MarshalBinary() ([]byte, error) {
-	b := make([]byte, neighMsgLen)
+	b := make([]byte, unix.SizeofNdMsg)
 
 	nlenc.PutUint16(b[0:2], m.Family)
 	// bytes 3 and 4 are padding
@@ -78,7 +66,7 @@ func (m *NeighMessage) MarshalBinary() ([]byte, error) {
 // UnmarshalBinary unmarshals the contents of a byte slice into a NeighMessage.
 func (m *NeighMessage) UnmarshalBinary(b []byte) error {
 	l := len(b)
-	if l < neighMsgLen {
+	if l < unix.SizeofNdMsg {
 		return errInvalidNeighMessage
 	}
 
@@ -88,9 +76,9 @@ func (m *NeighMessage) UnmarshalBinary(b []byte) error {
 	m.Flags = b[10]
 	m.Type = b[11]
 
-	if l > neighMsgLen {
+	if l > unix.SizeofNdMsg {
 		m.Attributes = &NeighAttributes{}
-		err := m.Attributes.UnmarshalBinary(b[neighMsgLen:])
+		err := m.Attributes.UnmarshalBinary(b[unix.SizeofNdMsg:])
 		if err != nil {
 			return err
 		}
@@ -180,21 +168,6 @@ type NeighAttributes struct {
 	IfIndex   uint32
 }
 
-const (
-	NDA_UNSPEC uint16 = iota
-	NDA_DST
-	NDA_LLADDR
-	NDA_CACHEINFO
-	NDA_PROBES
-	NDA_VLAN
-	NDA_PORT
-	NDA_VNI
-	NDA_IFINDEX
-	NDA_MASTER
-	NDA_LINK_NETNSID
-	NDA_SRC_VNI
-)
-
 // NeighAttributes unmarshals the contents of a byte slice into a NeighMessage.
 func (a *NeighAttributes) UnmarshalBinary(b []byte) error {
 	attrs, err := netlink.UnmarshalAttributes(b)
@@ -204,25 +177,25 @@ func (a *NeighAttributes) UnmarshalBinary(b []byte) error {
 
 	for _, attr := range attrs {
 		switch attr.Type {
-		case NDA_UNSPEC:
+		case unix.NDA_UNSPEC:
 			//unused attribute
-		case NDA_DST:
+		case unix.NDA_DST:
 			if len(attr.Data) != 4 && len(attr.Data) != 16 {
 				return errInvalidNeighMessageAttr
 			}
 			a.Address = attr.Data
-		case NDA_LLADDR:
+		case unix.NDA_LLADDR:
 			if len(attr.Data) != 6 {
 				return errInvalidNeighMessageAttr
 			}
 			a.LLAddress = attr.Data
-		case NDA_CACHEINFO:
+		case unix.NDA_CACHEINFO:
 			a.CacheInfo = &NeighCacheInfo{}
 			err := a.CacheInfo.UnmarshalBinary(attr.Data)
 			if err != nil {
 				return err
 			}
-		case NDA_IFINDEX:
+		case unix.NDA_IFINDEX:
 			if len(attr.Data) != 4 {
 				return errInvalidNeighMessageAttr
 			}
@@ -237,19 +210,19 @@ func (a *NeighAttributes) UnmarshalBinary(b []byte) error {
 func (a *NeighAttributes) MarshalBinary() ([]byte, error) {
 	attrs := []netlink.Attribute{
 		{
-			Type: NDA_UNSPEC,
+			Type: unix.NDA_UNSPEC,
 			Data: nlenc.Uint16Bytes(0),
 		},
 		{
-			Type: NDA_DST,
+			Type: unix.NDA_DST,
 			Data: a.Address,
 		},
 		{
-			Type: NDA_LLADDR,
+			Type: unix.NDA_LLADDR,
 			Data: a.LLAddress,
 		},
 		{
-			Type: NDA_IFINDEX,
+			Type: unix.NDA_IFINDEX,
 			Data: nlenc.Uint32Bytes(a.IfIndex),
 		},
 	}
