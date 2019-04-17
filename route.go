@@ -112,7 +112,7 @@ func (r *RouteService) Delete(req *RouteMessage) error {
 
 // Get Route(s)
 func (r *RouteService) Get(req *RouteMessage) ([]RouteMessage, error) {
-	flags := netlink.Request
+	flags := netlink.Request | netlink.DumpFiltered
 	msgs, err := r.c.Execute(req, unix.RTM_GETROUTE, flags)
 	if err != nil {
 		return nil, err
