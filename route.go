@@ -110,6 +110,23 @@ func (r *RouteService) Delete(req *RouteMessage) error {
 	return nil
 }
 
+// Get Route(s)
+func (r *RouteService) Get(req *RouteMessage) ([]RouteMessage, error) {
+	flags := netlink.Request
+	msgs, err := r.c.Execute(req, unix.RTM_GETROUTE, flags)
+	if err != nil {
+		return nil, err
+	}
+
+	routes := make([]RouteMessage, 0, len(msgs))
+	for _, m := range msgs {
+		route := (m).(*RouteMessage)
+		routes = append(routes, *route)
+	}
+
+	return routes, nil
+}
+
 // List all routes
 func (r *RouteService) List() ([]RouteMessage, error) {
 	req := &RouteMessage{}
