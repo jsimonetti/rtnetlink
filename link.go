@@ -7,6 +7,7 @@ import (
 
 	"github.com/mdlayher/netlink"
 	"github.com/mdlayher/netlink/nlenc"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -35,39 +36,40 @@ type LinkMessage struct {
 	// Contains device flags, see netdevice(7)
 	Flags uint32
 
-	// Change Flags, reserved for future use and should
-	// always be 0xffffffff
+	// Change Flags, specifies which flags will be affected by the Flags field
 	Change uint32
 
 	// Attributes List
-	Attributes LinkAttributes
+	Attributes *LinkAttributes
 }
-
-const linkMessageLength = 16
 
 // MarshalBinary marshals a LinkMessage into a byte slice.
 func (m *LinkMessage) MarshalBinary() ([]byte, error) {
-	b := make([]byte, linkMessageLength)
+	b := make([]byte, unix.SizeofIfInfomsg)
 
 	b[0] = 0 //Family
 	b[1] = 0 //reserved
 	nlenc.PutUint16(b[2:4], m.Type)
 	nlenc.PutUint32(b[4:8], m.Index)
 	nlenc.PutUint32(b[8:12], m.Flags)
-	nlenc.PutUint32(b[12:16], 0) //Change, reserved
+	nlenc.PutUint32(b[12:16], m.Change)
 
-	a, err := m.Attributes.MarshalBinary()
-	if err != nil {
-		return nil, err
+	if m.Attributes != nil {
+		a, err := m.Attributes.MarshalBinary()
+		if err != nil {
+			return nil, err
+		}
+
+		return append(b, a...), nil
 	}
 
-	return append(b, a...), nil
+	return b, nil
 }
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	l := len(b)
-	if l < linkMessageLength {
+	if l < unix.SizeofIfInfomsg {
 		return errInvalidLinkMessage
 	}
 
@@ -77,8 +79,8 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	m.Flags = nlenc.Uint32(b[8:12])
 	m.Change = nlenc.Uint32(b[12:16])
 
-	if l > linkMessageLength {
-		m.Attributes = LinkAttributes{}
+	if l > unix.SizeofIfInfomsg {
+		m.Attributes = &LinkAttributes{}
 		err := m.Attributes.UnmarshalBinary(b[16:])
 		if err != nil {
 			return err
@@ -96,20 +98,10 @@ type LinkService struct {
 	c *Conn
 }
 
-// Constants used to request information from rtnetlink links.
-const (
-	RTNLGRP_LINK = 0x1
-
-	RTM_NEWLINK = 0x10
-	RTM_DELLINK = 0x11
-	RTM_GETLINK = 0x12
-	RTM_SETLINK = 0x13
-)
-
 // New creates a new interface using the LinkMessage information.
 func (l *LinkService) New(req *LinkMessage) error {
 	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
-	_, err := l.c.Execute(req, RTM_NEWLINK, flags)
+	_, err := l.c.Execute(req, unix.RTM_NEWLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -124,7 +116,7 @@ func (l *LinkService) Delete(index uint32) error {
 	}
 
 	flags := netlink.Request | netlink.Acknowledge
-	_, err := l.c.Execute(req, RTM_DELLINK, flags)
+	_, err := l.c.Execute(req, unix.RTM_DELLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -139,7 +131,7 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 	}
 
 	flags := netlink.Request | netlink.DumpFiltered
-	msg, err := l.c.Execute(req, RTM_GETLINK, flags)
+	msg, err := l.c.Execute(req, unix.RTM_GETLINK, flags)
 	if err != nil {
 		return LinkMessage{}, err
 	}
@@ -155,7 +147,7 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 // Set sets interface attributes according to the LinkMessage information.
 func (l *LinkService) Set(req *LinkMessage) error {
 	flags := netlink.Request | netlink.Acknowledge
-	_, err := l.c.Execute(req, RTM_SETLINK, flags)
+	_, err := l.c.Execute(req, unix.RTM_SETLINK, flags)
 	if err != nil {
 		return err
 	}
@@ -168,7 +160,7 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 	req := &LinkMessage{}
 
 	flags := netlink.Request | netlink.Dump
-	msgs, err := l.c.Execute(req, RTM_GETLINK, flags)
+	msgs, err := l.c.Execute(req, unix.RTM_GETLINK, flags)
 	if err != nil {
 		return nil, err
 	}
@@ -211,58 +203,6 @@ const (
 	OperStateUp                                     // interface is in a state to send and receive packets
 )
 
-// Attribute IDs mapped to specific LinkAttribute fields.
-const (
-	iflaUnspec uint16 = iota
-	iflaAddress
-	iflaBroadcast
-	iflaIfname
-	iflaMTU
-	iflaLink
-	iflaQdisc
-	iflaStats
-	iflaCost
-	iflaPriority
-	iflaMaster
-	iflaWireless
-	iflaProtInfo
-	iflaTXQLen
-	iflaMap
-	iflaWeight
-	iflaOperState
-	iflaLinkMode
-	iflaLinkInfo
-	iflaNetNSPid
-	iflaIFAlias
-	iflaNumVF
-	iflaVFInfoList
-	iflaStats64
-	iflaVFPorts
-	iflaPortSelf
-	iflaAFSpec
-	iflaGroup
-	iflaNetNSFD
-	iflaExtMask
-	iflaPromiscuity
-	iflaNumTXQueues
-	iflaNumRXQueues
-	iflaCarrier
-	iflaPhysPortID
-	iflaCarrierChanges
-	iflaPhysSwitchID
-	iflaProtoDown
-	iflaGSOMaxSegs
-	iflaGSOMaxSize
-	iflaPad
-	iflaXDP
-	iflaEvent
-	iflaNewNetNSID
-	iflaIfNetNSID
-	iflaCarrierUpCount
-	iflaCarrierDownCount
-	iflaNewIFIndex
-)
-
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 	attrs, err := netlink.UnmarshalAttributes(b)
@@ -272,46 +212,46 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 
 	for _, attr := range attrs {
 		switch attr.Type {
-		case iflaUnspec:
+		case unix.IFLA_UNSPEC:
 			//unused attribute
-		case iflaAddress:
+		case unix.IFLA_ADDRESS:
 			l := len(attr.Data)
 			if l < 4 || l > 32 {
 				return errInvalidLinkMessageAttr
 			}
 			a.Address = attr.Data
-		case iflaBroadcast:
+		case unix.IFLA_BROADCAST:
 			l := len(attr.Data)
 			if l < 4 || l > 32 {
 				return errInvalidLinkMessageAttr
 			}
 			a.Broadcast = attr.Data
-		case iflaIfname:
+		case unix.IFLA_IFNAME:
 			a.Name = nlenc.String(attr.Data)
-		case iflaMTU:
+		case unix.IFLA_MTU:
 			if len(attr.Data) != 4 {
 				return errInvalidLinkMessageAttr
 			}
 			a.MTU = nlenc.Uint32(attr.Data)
-		case iflaLink:
+		case unix.IFLA_LINK:
 			if len(attr.Data) != 4 {
 				return errInvalidLinkMessageAttr
 			}
 			a.Type = nlenc.Uint32(attr.Data)
-		case iflaQdisc:
+		case unix.IFLA_QDISC:
 			a.QueueDisc = nlenc.String(attr.Data)
-		case iflaOperState:
+		case unix.IFLA_OPERSTATE:
 			if len(attr.Data) != 1 {
 				return errInvalidLinkMessageAttr
 			}
 			a.OperationalState = OperationalState(nlenc.Uint8(attr.Data))
-		case iflaStats:
+		case unix.IFLA_STATS:
 			a.Stats = &LinkStats{}
 			err := a.Stats.UnmarshalBinary(attr.Data)
 			if err != nil {
 				return err
 			}
-		case iflaLinkInfo:
+		case unix.IFLA_LINKINFO:
 			a.Info = &LinkInfo{}
 			err := a.Info.UnmarshalBinary(attr.Data)
 			if err != nil {
@@ -327,50 +267,44 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 	attrs := []netlink.Attribute{
 		{
-			Type: iflaUnspec,
+			Type: unix.IFLA_UNSPEC,
 			Data: nlenc.Uint16Bytes(0),
 		},
 		{
-			Type: iflaIfname,
+			Type: unix.IFLA_IFNAME,
 			Data: nlenc.Bytes(a.Name),
 		},
 		{
-			Type: iflaMTU,
+			Type: unix.IFLA_MTU,
 			Data: nlenc.Uint32Bytes(a.MTU),
 		},
 		{
-			Type: iflaLink,
+			Type: unix.IFLA_LINK,
 			Data: nlenc.Uint32Bytes(a.Type),
 		},
 		{
-			Type: iflaQdisc,
+			Type: unix.IFLA_QDISC,
 			Data: nlenc.Bytes(a.QueueDisc),
 		},
-		/*
-			{
-				Type: iflaStats,
-				Data: nlenc.Bytes(name),
-			},
-		*/
 	}
 
 	if len(a.Address) != 0 {
 		attrs = append(attrs, netlink.Attribute{
-			Type: iflaAddress,
+			Type: unix.IFLA_ADDRESS,
 			Data: a.Address,
 		})
 	}
 
 	if len(a.Broadcast) != 0 {
 		attrs = append(attrs, netlink.Attribute{
-			Type: iflaBroadcast,
+			Type: unix.IFLA_BROADCAST,
 			Data: a.Broadcast,
 		})
 	}
 
 	if a.OperationalState != OperStateUnknown {
 		attrs = append(attrs, netlink.Attribute{
-			Type: iflaOperState,
+			Type: unix.IFLA_OPERSTATE,
 			Data: nlenc.Uint8Bytes(uint8(a.OperationalState)),
 		})
 	}
@@ -381,7 +315,7 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 			return nil, err
 		}
 		attrs = append(attrs, netlink.Attribute{
-			Type: iflaLinkInfo,
+			Type: unix.IFLA_LINKINFO,
 			Data: info,
 		})
 	}
@@ -426,8 +360,9 @@ type LinkStats struct {
 
 // UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkStats) UnmarshalBinary(b []byte) error {
-	if len(b) != 92 && len(b) != 96 {
-		return fmt.Errorf("incorrect size, want: 92 or 96, got: %d", len(b))
+	l := len(b)
+	if l != 92 && l != 96 {
+		return fmt.Errorf("incorrect size, want: 92 or 96")
 	}
 
 	a.RXPackets = nlenc.Uint32(b[0:4])
@@ -457,20 +392,12 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 	a.RXCompressed = nlenc.Uint32(b[84:88])
 	a.TXCompressed = nlenc.Uint32(b[88:92])
 
-	if len(b) == 96 {
+	if l == 96 {
 		a.RXNoHandler = nlenc.Uint32(b[92:96])
 	}
 
 	return nil
 }
-
-const (
-	iflaInfoUnspec uint16 = iota
-	iflaInfoKind
-	iflaInfoData
-	iflaInfoSlaveKind
-	iflaInfoSlaveData
-)
 
 // LinkInfo contains data for specific network types
 type LinkInfo struct {
@@ -489,13 +416,13 @@ func (i *LinkInfo) UnmarshalBinary(b []byte) error {
 
 	for _, attr := range attrs {
 		switch attr.Type {
-		case iflaInfoKind:
+		case unix.IFLA_INFO_KIND:
 			i.Kind = nlenc.String(attr.Data)
-		case iflaInfoSlaveKind:
+		case unix.IFLA_INFO_SLAVE_KIND:
 			i.SlaveKind = nlenc.String(attr.Data)
-		case iflaInfoData:
+		case unix.IFLA_INFO_DATA:
 			i.Data = attr.Data
-		case iflaInfoSlaveData:
+		case unix.IFLA_INFO_SLAVE_DATA:
 			i.SlaveData = attr.Data
 		}
 	}
@@ -507,11 +434,11 @@ func (i *LinkInfo) UnmarshalBinary(b []byte) error {
 func (i *LinkInfo) MarshalBinary() ([]byte, error) {
 	attrs := []netlink.Attribute{
 		{
-			Type: iflaInfoKind,
+			Type: unix.IFLA_INFO_KIND,
 			Data: nlenc.Bytes(i.Kind),
 		},
 		{
-			Type: iflaInfoData,
+			Type: unix.IFLA_INFO_DATA,
 			Data: i.Data,
 		},
 	}
@@ -519,11 +446,11 @@ func (i *LinkInfo) MarshalBinary() ([]byte, error) {
 	if len(i.SlaveData) > 0 {
 		attrs = append(attrs,
 			netlink.Attribute{
-				Type: iflaInfoSlaveKind,
+				Type: unix.IFLA_INFO_SLAVE_KIND,
 				Data: nlenc.Bytes(i.SlaveKind),
 			},
 			netlink.Attribute{
-				Type: iflaInfoSlaveData,
+				Type: unix.IFLA_INFO_SLAVE_DATA,
 				Data: i.SlaveData,
 			},
 		)

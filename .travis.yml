@@ -1,4 +1,5 @@
 language: go
+sudo: required
 go:
   - 1.x
   - tip
@@ -12,3 +13,4 @@ script:
   - go vet ./...
 #  - golint -set_exit_status ./...
   - go test -v -tags=integration ./...
+  - .travis/tests.sh
