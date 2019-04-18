@@ -184,6 +184,7 @@ type LinkAttributes struct {
 	QueueDisc        string           // Queueing discipline
 	OperationalState OperationalState // Interface operation state
 	Stats            *LinkStats       // Interface Statistics
+	Stats64          *LinkStats64     // Interface Statistics (64 bits version)
 	Info             *LinkInfo        // Detailed Interface Information
 }
 
@@ -248,6 +249,12 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 		case unix.IFLA_STATS:
 			a.Stats = &LinkStats{}
 			err := a.Stats.UnmarshalBinary(attr.Data)
+			if err != nil {
+				return err
+			}
+		case unix.IFLA_STATS64:
+			a.Stats64 = &LinkStats64{}
+			err := a.Stats64.UnmarshalBinary(attr.Data)
 			if err != nil {
 				return err
 			}
@@ -323,7 +330,7 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 	return netlink.MarshalAttributes(attrs)
 }
 
-//LinkStats contains packet statistics
+// LinkStats contains packet statistics
 type LinkStats struct {
 	RXPackets  uint32 // total packets received
 	TXPackets  uint32 // total packets transmitted
@@ -394,6 +401,82 @@ func (a *LinkStats) UnmarshalBinary(b []byte) error {
 
 	if l == 96 {
 		a.RXNoHandler = nlenc.Uint32(b[92:96])
+	}
+
+	return nil
+}
+
+// LinkStats64 contains packet statistics
+type LinkStats64 struct {
+	RXPackets  uint64 // total packets received
+	TXPackets  uint64 // total packets transmitted
+	RXBytes    uint64 // total bytes received
+	TXBytes    uint64 // total bytes transmitted
+	RXErrors   uint64 // bad packets received
+	TXErrors   uint64 // packet transmit problems
+	RXDropped  uint64 // no space in linux buffers
+	TXDropped  uint64 // no space available in linux
+	Multicast  uint64 // multicast packets received
+	Collisions uint64
+
+	// detailed rx_errors:
+	RXLengthErrors uint64
+	RXOverErrors   uint64 // receiver ring buff overflow
+	RXCRCErrors    uint64 // recved pkt with crc error
+	RXFrameErrors  uint64 // recv'd frame alignment error
+	RXFIFOErrors   uint64 // recv'r fifo overrun
+	RXMissedErrors uint64 // receiver missed packet
+
+	// detailed tx_errors
+	TXAbortedErrors   uint64
+	TXCarrierErrors   uint64
+	TXFIFOErrors      uint64
+	TXHeartbeatErrors uint64
+	TXWindowErrors    uint64
+
+	// for cslip etc
+	RXCompressed uint64
+	TXCompressed uint64
+
+	RXNoHandler uint64 // dropped, no handler found
+}
+
+// UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
+func (a *LinkStats64) UnmarshalBinary(b []byte) error {
+	l := len(b)
+	if l != 184 && l != 192 {
+		return fmt.Errorf("incorrect size, want: 184 or 192")
+	}
+
+	a.RXPackets = nlenc.Uint64(b[0:8])
+	a.TXPackets = nlenc.Uint64(b[8:16])
+	a.RXBytes = nlenc.Uint64(b[16:24])
+	a.TXBytes = nlenc.Uint64(b[24:32])
+	a.RXErrors = nlenc.Uint64(b[32:40])
+	a.TXErrors = nlenc.Uint64(b[40:48])
+	a.RXDropped = nlenc.Uint64(b[48:56])
+	a.TXDropped = nlenc.Uint64(b[56:64])
+	a.Multicast = nlenc.Uint64(b[64:72])
+	a.Collisions = nlenc.Uint64(b[72:80])
+
+	a.RXLengthErrors = nlenc.Uint64(b[80:88])
+	a.RXOverErrors = nlenc.Uint64(b[88:96])
+	a.RXCRCErrors = nlenc.Uint64(b[96:104])
+	a.RXFrameErrors = nlenc.Uint64(b[104:112])
+	a.RXFIFOErrors = nlenc.Uint64(b[112:120])
+	a.RXMissedErrors = nlenc.Uint64(b[120:128])
+
+	a.TXAbortedErrors = nlenc.Uint64(b[128:136])
+	a.TXCarrierErrors = nlenc.Uint64(b[136:144])
+	a.TXFIFOErrors = nlenc.Uint64(b[144:152])
+	a.TXHeartbeatErrors = nlenc.Uint64(b[152:160])
+	a.TXWindowErrors = nlenc.Uint64(b[160:168])
+
+	a.RXCompressed = nlenc.Uint64(b[168:176])
+	a.TXCompressed = nlenc.Uint64(b[176:184])
+
+	if l == 192 {
+		a.RXNoHandler = nlenc.Uint64(b[184:192])
 	}
 
 	return nil
