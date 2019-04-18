@@ -2,4 +2,7 @@ module github.com/OrdnanceNetworks/rtnetlink
 
 go 1.12
 
-require github.com/mdlayher/netlink v0.0.0-20190403155754-1d8397c40443
+require (
+	github.com/mdlayher/netlink v0.0.0-20190409211403-11939a169225
+	golang.org/x/sys v0.0.0-20190411185658-b44545bcd369
+)
