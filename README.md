@@ -35,5 +35,6 @@ all netlink traffic.
 
 Have a look at the examples for common uses of rtnetlink.
 
-This package is heavily inspired by https://github.com/mdlayher/netlink.
-
+If you have any questions or you'd like some guidance, please join us on
+[Gophers Slack](https://invite.slack.golangbridge.org) in the `#networking`
+channel!
