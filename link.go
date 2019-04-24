@@ -182,6 +182,7 @@ type LinkAttributes struct {
 	MTU              uint32           // MTU of the device
 	Type             uint32           // Link type
 	QueueDisc        string           // Queueing discipline
+	Master           *uint32          // Master device index (0 value un-enslaves)
 	OperationalState OperationalState // Interface operation state
 	Stats            *LinkStats       // Interface Statistics
 	Stats64          *LinkStats64     // Interface Statistics (64 bits version)
@@ -264,6 +265,12 @@ func (a *LinkAttributes) UnmarshalBinary(b []byte) error {
 			if err != nil {
 				return err
 			}
+		case unix.IFLA_MASTER:
+			if len(attr.Data) != 4 {
+				return errInvalidLinkMessageAttr
+			}
+			v := nlenc.Uint32(attr.Data)
+			a.Master = &v
 		}
 	}
 
@@ -282,10 +289,6 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 			Data: nlenc.Bytes(a.Name),
 		},
 		{
-			Type: unix.IFLA_MTU,
-			Data: nlenc.Uint32Bytes(a.MTU),
-		},
-		{
 			Type: unix.IFLA_LINK,
 			Data: nlenc.Uint32Bytes(a.Type),
 		},
@@ -293,6 +296,13 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 			Type: unix.IFLA_QDISC,
 			Data: nlenc.Bytes(a.QueueDisc),
 		},
+	}
+
+	if a.MTU != 0 {
+		attrs = append(attrs, netlink.Attribute{
+			Type: unix.IFLA_MTU,
+			Data: nlenc.Uint32Bytes(a.MTU),
+		})
 	}
 
 	if len(a.Address) != 0 {
@@ -324,6 +334,13 @@ func (a *LinkAttributes) MarshalBinary() ([]byte, error) {
 		attrs = append(attrs, netlink.Attribute{
 			Type: unix.IFLA_LINKINFO,
 			Data: info,
+		})
+	}
+
+	if a.Master != nil {
+		attrs = append(attrs, netlink.Attribute{
+			Type: unix.IFLA_MASTER,
+			Data: nlenc.Uint32Bytes(*a.Master),
 		})
 	}
 
