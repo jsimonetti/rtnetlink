@@ -28,6 +28,6 @@ func Dial(cfg *netlink.Config) (*Conn, error) {
 }
 
 // Close the connection.
-func (c *Conn) Close() {
-	c.Conn.Close()
+func (c *Conn) Close() error {
+	return c.Conn.Close()
 }
