@@ -5,8 +5,8 @@ package rtnl
 import (
 	"bytes"
 	"net"
-	"testing"
 	"strconv"
+	"testing"
 )
 
 const (
@@ -27,7 +27,7 @@ func hardwareAddrIsSpecified(hw net.HardwareAddr) bool {
 
 // TestLinks tests the Live function returns sane results
 func TestLiveLinks(t *testing.T) {
-	c, err := Dial(nil)
+	c, err := Dial()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func TestLiveLinks(t *testing.T) {
 				if ifindex == ieth && !hardwareAddrIsSpecified(ifc.HardwareAddr) {
 					t.Error("zero ifc.HardwareAddr, expected non-zero")
 				}
-				if ifindex == ilo && ifc.Flags&net.FlagLoopback == 0  {
+				if ifindex == ilo && ifc.Flags&net.FlagLoopback == 0 {
 					t.Error("no FlagLoopback in ifc.Flags, expected to be set")
 				}
 			})
