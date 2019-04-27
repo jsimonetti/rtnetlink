@@ -57,10 +57,6 @@ func (c *Conn) RouteDel(ifc *net.Interface, dst net.IPNet) error {
 		return err
 	}
 	prefixlen, _ := dst.Mask.Size()
-	scope := addrScope(dst.IP)
-	if len(dst.IP) == net.IPv6len && dst.IP.To4() == nil {
-		scope = unix.RT_SCOPE_UNIVERSE
-	}
 	attr := rtnetlink.RouteAttributes{
 		Dst:      dst.IP,
 		OutIface: uint32(ifc.Index),
@@ -68,9 +64,6 @@ func (c *Conn) RouteDel(ifc *net.Interface, dst net.IPNet) error {
 	tx := &rtnetlink.RouteMessage{
 		Family:     uint8(af),
 		Table:      unix.RT_TABLE_MAIN,
-		Protocol:   unix.RTPROT_BOOT,
-		Type:       unix.RTN_UNICAST,
-		Scope:      uint8(scope),
 		DstLength:  uint8(prefixlen),
 		Attributes: attr,
 	}
