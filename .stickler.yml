@@ -5,3 +5,6 @@ linters:
     shell: bash
 fixers:
   enable: true
+files:
+  ignore:
+    - '*_string.go'
