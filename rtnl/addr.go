@@ -84,10 +84,10 @@ func (c *Conn) Addrs(ifc *net.Interface, family int) (out []*net.IPNet, err erro
 	}
 	for _, m := range rx {
 		if match(&m, ifc, family) {
-			iplen := len(m.Attributes.Address)
+			bitlen := 8 * len(m.Attributes.Address)
 			a := &net.IPNet{
 				IP:   m.Attributes.Address,
-				Mask: net.CIDRMask(int(m.PrefixLength), iplen),
+				Mask: net.CIDRMask(int(m.PrefixLength), bitlen),
 			}
 			out = append(out, a)
 		}
