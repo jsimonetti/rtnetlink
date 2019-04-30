@@ -26,8 +26,10 @@ func (c *Conn) AddrAdd(ifc *net.Interface, addr *net.IPNet) error {
 			Local:   addr.IP,
 		},
 	}
-	if addr.IP.To4() != nil {
+	if ip4 := addr.IP.To4(); ip4 != nil {
 		tx.Attributes.Broadcast = broadcastAddr(addr)
+		tx.Attributes.Address = ip4
+		tx.Attributes.Local = ip4
 	}
 	return c.Conn.Address.New(tx)
 }
@@ -54,8 +56,9 @@ func (c *Conn) AddrDel(ifc *net.Interface, addr *net.IPNet) error {
 					Address: addr.IP,
 				},
 			}
-			if addr.IP.To4() != nil {
+			if ip4 := addr.IP.To4(); ip4 != nil {
 				tx.Attributes.Broadcast = broadcastAddr(addr)
+				tx.Attributes.Address = ip4
 			}
 			return c.Conn.Address.Delete(tx)
 		}
