@@ -5,7 +5,10 @@ package rtnl
 import (
 	"errors"
 	"net"
+	"syscall"
 	"testing"
+
+	"github.com/mdlayher/netlink"
 )
 
 var errNoLoopback = errors.New("no loopback interface")
@@ -95,9 +98,12 @@ func TestLiveAddrAddDel(t *testing.T) {
 
 	c.AddrDel(lo, testip) // ok if fails
 
-	// requires specific privilege, hence skip not fail
 	if err := c.AddrAdd(lo, testip); err != nil {
-		t.Skip("AddrAdd: ", err)
+		// requires specific privilege - skip the test if can't do
+		if v, ok := err.(*netlink.OpError); ok && v.Err == syscall.EPERM {
+			t.Skip("AddrAdd: ", err)
+		}
+		t.Fatal("AddrAdd:", err)
 	}
 	// if the above suceeded, everything below should do, too
 	ok, err := interfaceHasAddr(c, lo, testip)
