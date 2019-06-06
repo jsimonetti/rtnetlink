@@ -21,8 +21,8 @@ func hardwareAddrEqual(a, b net.HardwareAddr) bool {
 	return bytes.Equal(a, b)
 }
 
-func hardwareAddrIsSpecified(hw net.HardwareAddr) bool {
-	return len(hw) == hardwareAddrLen && !hardwareAddrEqual(hw, hardwareAddrZero)
+func hardwareAddrIsUnspecified(hw net.HardwareAddr) bool {
+	return len(hw) != hardwareAddrLen || hardwareAddrEqual(hw, hardwareAddrZero)
 }
 
 // TestLinks tests the Live function returns sane results
@@ -52,7 +52,7 @@ func TestLiveLinks(t *testing.T) {
 		if len(ifc.Name) == 0 {
 			t.Error("zero-length ifc.Name")
 		}
-		if hardwareAddrIsSpecified(ifc.HardwareAddr) {
+		if !hardwareAddrIsUnspecified(ifc.HardwareAddr) {
 			ieth = ifc.Index
 		}
 		if ifc.Flags&net.FlagLoopback != 0 {
@@ -86,7 +86,7 @@ func TestLiveLinks(t *testing.T) {
 				if len(ifc.Name) == 0 {
 					t.Error("zero-length ifc.Name")
 				}
-				if ifindex == ieth && !hardwareAddrIsSpecified(ifc.HardwareAddr) {
+				if ifindex == ieth && hardwareAddrIsUnspecified(ifc.HardwareAddr) {
 					t.Error("zero ifc.HardwareAddr, expected non-zero")
 				}
 				if ifindex == ilo && ifc.Flags&net.FlagLoopback == 0  {
