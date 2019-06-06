@@ -3,7 +3,10 @@
 // Traffic classes and Packet classifiers may all be controlled.
 // It is based on netlink messages.
 //
-// This library explicitly only exposes a limited low-level API to rtnetlink.
+// A convenient, high-level API wrapper is available using package rtnl:
+// https://godoc.org/github.com/jsimonetti/rtnetlink/rtnl.
+//
+// The base rtnetlink library xplicitly only exposes a limited low-level API to rtnetlink.
 // It is not the intention (nor wish) to create an iproute2 replacement.
 //
 // When in doubt about your message structure it can always be useful to look at the

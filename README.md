@@ -1,12 +1,15 @@
 rtnetlink [![Build Status](https://travis-ci.org/jsimonetti/rtnetlink.svg?branch=master)](https://travis-ci.org/jsimonetti/rtnetlink) [![GoDoc](https://godoc.org/github.com/jsimonetti/rtnetlink?status.svg)](https://godoc.org/github.com/jsimonetti/rtnetlink) [![Go Report Card](https://goreportcard.com/badge/github.com/jsimonetti/rtnetlink)](https://goreportcard.com/report/github.com/jsimonetti/rtnetlink)
 =======
 
-Package rtnetlink allows the kernel's routing tables to be read and
+Package `rtnetlink` allows the kernel's routing tables to be read and
 altered. Network routes, IP addresses, Link parameters, Neighbor setups,
 Queueing disciplines, Traffic classes and Packet classifiers may all be
 controlled. It is based on netlink messages.
 
-This library explicitly only exposes a limited low-level API to
+A convenient, high-level API wrapper is available using package
+[`rtnl`](https://godoc.org/github.com/jsimonetti/rtnetlink/rtnl).
+
+The base `rtnetlink` library explicitly only exposes a limited low-level API to
 rtnetlink. It is not the intention (nor wish) to create an iproute2
 replacement.
 
