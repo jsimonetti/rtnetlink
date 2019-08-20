@@ -109,7 +109,7 @@ func addrFamily(ip net.IP) (int, error) {
 }
 
 func addrScope(ip net.IP) int {
-	if ip.IsGlobalUnicast() {
+	if ip.IsGlobalUnicast() || ip.IsUnspecified() {
 		return unix.RT_SCOPE_UNIVERSE
 	}
 	return unix.RT_SCOPE_LINK

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/mdlayher/netlink"
+	"golang.org/x/sys/unix"
 )
 
 var errNoLoopback = errors.New("no loopback interface")
@@ -114,5 +115,31 @@ func TestLiveAddrAddDel(t *testing.T) {
 	}
 	if err := c.AddrDel(lo, testip); err != nil {
 		t.Error("AddrDel: ", err)
+	}
+}
+
+func TestAddrScope(t *testing.T) {
+	addrTests := []struct {
+		Address  net.IP
+		Expected int
+	}{
+		{
+			Address:  net.IPv4zero,
+			Expected: unix.RT_SCOPE_UNIVERSE,
+		},
+		{
+			Address:  net.ParseIP("169.254.169.254"),
+			Expected: unix.RT_SCOPE_LINK,
+		},
+		{
+			Address:  net.ParseIP("10.1.1.1"),
+			Expected: unix.RT_SCOPE_UNIVERSE,
+		},
+	}
+
+	for _, test := range addrTests {
+		if got := addrScope(test.Address); got != test.Expected {
+			t.Errorf("addrScope(%s) incorrect: got %d expected %d", test.Address, got, test.Expected)
+		}
 	}
 }
