@@ -21,7 +21,7 @@ install:
 
 .PHONY: fuzz
 fuzz:
-	GO111MODULE=off go-fuzz-build -tags gofuzz
+	go-fuzz-build -tags gofuzz
 	go-fuzz -bin=./rtnetlink-fuzz.zip -workdir=testdata
 
 .PHONY: clean
