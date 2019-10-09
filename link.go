@@ -88,6 +88,7 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	if l > unix.SizeofIfInfomsg {
 		m.Attributes = &LinkAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[16:])
+		ad.ByteOrder = nativeEndian
 		if err != nil {
 			return err
 		}
