@@ -10,6 +10,8 @@ import (
 )
 
 func TestLinkMessageMarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		m    Message
@@ -172,6 +174,8 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 }
 
 func TestLinkMessageUnmarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		b    []byte
@@ -373,6 +377,8 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 }
 
 func TestLinkStatsUnmarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		b    []byte
@@ -505,6 +511,8 @@ func TestLinkStatsUnmarshalBinary(t *testing.T) {
 }
 
 func TestLinkStats64UnmarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		b    []byte

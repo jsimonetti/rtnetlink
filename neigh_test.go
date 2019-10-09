@@ -12,6 +12,8 @@ import (
 // Tests will only pass on little endian machines
 
 func TestNeighMessageMarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		m    Message
@@ -83,6 +85,8 @@ func TestNeighMessageMarshalBinary(t *testing.T) {
 }
 
 func TestNeighMessageUnmarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		b    []byte
