@@ -85,10 +85,10 @@ func (m *NeighMessage) UnmarshalBinary(b []byte) error {
 	if l > unix.SizeofNdMsg {
 		m.Attributes = &NeighAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[unix.SizeofNdMsg:])
-		ad.ByteOrder = nativeEndian
 		if err != nil {
 			return err
 		}
+		ad.ByteOrder = nativeEndian
 		err = m.Attributes.decode(ad)
 		if err != nil {
 			return err
@@ -179,13 +179,12 @@ type NeighAttributes struct {
 	IfIndex   uint32
 }
 
-// NeighAttributes unmarshals the contents of a byte slice into a NeighMessage.
 func (a *NeighAttributes) decode(ad *netlink.AttributeDecoder) error {
 
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.NDA_UNSPEC:
-			//unused attribute
+			// unused attribute
 		case unix.NDA_DST:
 			l := len(ad.Bytes())
 			if l != 4 && l != 16 {
@@ -211,7 +210,6 @@ func (a *NeighAttributes) decode(ad *netlink.AttributeDecoder) error {
 	return nil
 }
 
-// MarshalBinary marshals a NeighAttributes into a byte slice.
 func (a *NeighAttributes) encode(ae *netlink.AttributeEncoder) error {
 	ae.Uint16(unix.NDA_UNSPEC, 0)
 	ae.Bytes(unix.NDA_DST, a.Address)

@@ -46,8 +46,8 @@ type LinkMessage struct {
 func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, unix.SizeofIfInfomsg)
 
-	b[0] = 0 //Family
-	b[1] = 0 //reserved
+	b[0] = 0 // Family
+	b[1] = 0 // reserved
 	nativeEndian.PutUint16(b[2:4], m.Type)
 	nativeEndian.PutUint32(b[4:8], m.Index)
 	nativeEndian.PutUint32(b[8:12], m.Flags)
@@ -72,7 +72,7 @@ func (m *LinkMessage) MarshalBinary() ([]byte, error) {
 	return b, nil
 }
 
-// unmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
+// UnmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	l := len(b)
 	if l < unix.SizeofIfInfomsg {
@@ -88,10 +88,10 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	if l > unix.SizeofIfInfomsg {
 		m.Attributes = &LinkAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[16:])
-		ad.ByteOrder = nativeEndian
 		if err != nil {
 			return err
 		}
+		ad.ByteOrder = nativeEndian
 		err = m.Attributes.decode(ad)
 		if err != nil {
 			return err
@@ -222,7 +222,7 @@ func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFLA_UNSPEC:
-			//unused attribute
+			// unused attribute
 		case unix.IFLA_ADDRESS:
 			l := len(ad.Bytes())
 			if l < 4 || l > 32 {
@@ -238,21 +238,12 @@ func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.IFLA_IFNAME:
 			a.Name = ad.String()
 		case unix.IFLA_MTU:
-			if len(ad.Bytes()) != 4 {
-				return errInvalidLinkMessageAttr
-			}
 			a.MTU = ad.Uint32()
 		case unix.IFLA_LINK:
-			if len(ad.Bytes()) != 4 {
-				return errInvalidLinkMessageAttr
-			}
 			a.Type = ad.Uint32()
 		case unix.IFLA_QDISC:
 			a.QueueDisc = ad.String()
 		case unix.IFLA_OPERSTATE:
-			if len(ad.Bytes()) != 1 {
-				return errInvalidLinkMessageAttr
-			}
 			a.OperationalState = OperationalState(ad.Uint8())
 		case unix.IFLA_STATS:
 			a.Stats = &LinkStats{}
@@ -270,9 +261,6 @@ func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
 			a.Info = &LinkInfo{}
 			ad.Nested(a.Info.decode)
 		case unix.IFLA_MASTER:
-			if len(ad.Bytes()) != 4 {
-				return errInvalidLinkMessageAttr
-			}
 			v := ad.Uint32()
 			a.Master = &v
 		}
@@ -486,7 +474,6 @@ type LinkInfo struct {
 	SlaveData []byte // Slave driver specific configuration
 }
 
-// unmarshalBinary unmarshals the contents of a byte slice into a LinkInfo.
 func (i *LinkInfo) decode(ad *netlink.AttributeDecoder) error {
 
 	for ad.Next() {
@@ -505,7 +492,6 @@ func (i *LinkInfo) decode(ad *netlink.AttributeDecoder) error {
 	return nil
 }
 
-// MarshalBinary marshals a LinkInfo into a byte slice.
 func (i *LinkInfo) encode(ae *netlink.AttributeEncoder) error {
 	ae.String(unix.IFLA_INFO_KIND, i.Kind)
 	ae.Bytes(unix.IFLA_INFO_DATA, i.Data)

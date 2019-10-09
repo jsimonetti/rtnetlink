@@ -81,10 +81,10 @@ func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 	if l > unix.SizeofIfAddrmsg {
 		m.Attributes = AddressAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[unix.SizeofIfAddrmsg:])
-		ad.ByteOrder = nativeEndian
 		if err != nil {
 			return err
 		}
+		ad.ByteOrder = nativeEndian
 		err = m.Attributes.decode(ad)
 		if err != nil {
 			return err
@@ -154,13 +154,12 @@ type AddressAttributes struct {
 	Flags     uint32    // Address flags
 }
 
-// UnmarshalBinary unmarshals the contents of a byte slice into a AddressMessage.
 func (a *AddressAttributes) decode(ad *netlink.AttributeDecoder) error {
 
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFA_UNSPEC:
-			//unused attribute
+			// unused attribute
 		case unix.IFA_ADDRESS:
 			l := len(ad.Bytes())
 			if l != 4 && l != 16 {
@@ -210,7 +209,6 @@ func (a *AddressAttributes) decode(ad *netlink.AttributeDecoder) error {
 	return nil
 }
 
-// MarshalBinary marshals a AddressAttributes into a byte slice.
 func (a *AddressAttributes) encode(ae *netlink.AttributeEncoder) error {
 	ae.Uint16(unix.IFA_UNSPEC, 0)
 	ae.Bytes(unix.IFA_ADDRESS, a.Address)
