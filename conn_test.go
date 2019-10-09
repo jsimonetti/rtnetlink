@@ -2,16 +2,20 @@ package rtnetlink
 
 import (
 	"encoding"
+	"encoding/binary"
 	"fmt"
 	"os"
 	"reflect"
 	"testing"
 
 	"github.com/mdlayher/netlink"
+	"github.com/mdlayher/netlink/nlenc"
 	"golang.org/x/sys/unix"
 )
 
 func TestConnExecute(t *testing.T) {
+	skipBigEndian(t)
+
 	req := &LinkMessage{}
 
 	wantnl := netlink.Message{
@@ -69,6 +73,8 @@ func TestConnExecute(t *testing.T) {
 }
 
 func TestConnSend(t *testing.T) {
+	skipBigEndian(t)
+
 	req := &LinkMessage{}
 
 	c, tc := testConn(t)
@@ -102,6 +108,8 @@ func TestConnSend(t *testing.T) {
 }
 
 func TestConnReceive(t *testing.T) {
+	skipBigEndian(t)
+
 	c, tc := testConn(t)
 	tc.receive = []netlink.Message{
 		{
@@ -210,4 +218,10 @@ func mustMarshal(m encoding.BinaryMarshaler) []byte {
 	}
 
 	return b
+}
+
+func skipBigEndian(t *testing.T) {
+	if nlenc.NativeEndian() == binary.BigEndian {
+		t.Skip("skipping test on big-endian system")
+	}
 }

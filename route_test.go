@@ -12,6 +12,8 @@ import (
 // Tests will only pass on little endian machines
 
 func TestRouteMessageMarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	timeout := uint32(255)
 	tests := []struct {
 		name string
@@ -79,6 +81,8 @@ func TestRouteMessageMarshalBinary(t *testing.T) {
 }
 
 func TestRouteMessageUnmarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	timeout := uint32(1000)
 	tests := []struct {
 		name string

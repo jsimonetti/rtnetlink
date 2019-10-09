@@ -10,6 +10,8 @@ import (
 )
 
 func TestAddressMessageMarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		m    Message
@@ -84,6 +86,8 @@ func TestAddressMessageMarshalBinary(t *testing.T) {
 }
 
 func TestAddressMessageUnmarshalBinary(t *testing.T) {
+	skipBigEndian(t)
+
 	tests := []struct {
 		name string
 		b    []byte
