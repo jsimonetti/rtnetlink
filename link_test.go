@@ -488,7 +488,7 @@ func TestLinkStatsUnmarshalBinary(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &LinkStats{}
-			err := (m).UnmarshalBinary(tt.b)
+			err := (m).unmarshalBinary(tt.b)
 
 			if err != nil {
 				if want, got := fmt.Sprintf("%s", tt.err), fmt.Sprintf("%s", err); want != got {
@@ -643,7 +643,7 @@ func TestLinkStats64UnmarshalBinary(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &LinkStats64{}
-			err := (m).UnmarshalBinary(tt.b)
+			err := (m).unmarshalBinary(tt.b)
 
 			if err != nil {
 				if want, got := fmt.Sprintf("%s", tt.err), fmt.Sprintf("%s", err); want != got {
