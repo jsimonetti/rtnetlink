@@ -2,11 +2,13 @@ package rtnetlink
 
 import (
 	"bytes"
+	"encoding/binary"
 	"net"
 	"reflect"
 	"testing"
 
-	"golang.org/x/sys/unix"
+	"github.com/jsimonetti/rtnetlink/internal/unix"
+	"github.com/mdlayher/netlink/nlenc"
 )
 
 func TestAddressMessageMarshalBinary(t *testing.T) {
@@ -170,5 +172,11 @@ func TestAddressMessageUnmarshalBinary(t *testing.T) {
 				t.Fatalf("unexpected Message:\n- want: %#v\n-  got: %#v", want, got)
 			}
 		})
+	}
+}
+
+func skipBigEndian(t *testing.T) {
+	if nlenc.NativeEndian() == binary.BigEndian {
+		t.Skip("skipping test on big-endian system")
 	}
 }

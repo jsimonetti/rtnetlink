@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"golang.org/x/sys/unix"
+	"github.com/jsimonetti/rtnetlink/internal/unix"
 )
 
 // Tests will only pass on little endian machines

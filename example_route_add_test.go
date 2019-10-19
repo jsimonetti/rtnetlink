@@ -1,3 +1,5 @@
+// +build
+
 package rtnetlink_test
 
 import (

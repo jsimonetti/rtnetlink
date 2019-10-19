@@ -4,8 +4,9 @@ import (
 	"errors"
 	"net"
 
+	"github.com/jsimonetti/rtnetlink/internal/unix"
+
 	"github.com/mdlayher/netlink"
-	"golang.org/x/sys/unix"
 )
 
 var (
