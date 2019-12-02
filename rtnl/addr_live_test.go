@@ -94,7 +94,8 @@ func TestLiveAddrAddDel(t *testing.T) {
 	if lo == nil {
 		t.Fatal("no error but nil result")
 	}
-	testip := &net.IPNet{IP: net.IPv4(127, 0, 0, 99), Mask: net.CIDRMask(32, 32)}
+
+	testip := MustParseAddr("127.0.0.99/32")
 
 	c.AddrDel(lo, testip) // ok if fails
 
