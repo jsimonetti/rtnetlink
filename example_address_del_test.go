@@ -14,7 +14,7 @@ func Example_deleteAddress() {
 	// Gather the interface Index
 	iface, _ := net.InterfaceByName("lo")
 	// Get an ip address to delete from the interface
-	_, addr, _ := net.ParseCIDR("127.0.0.2/8")
+	addr, cidr, _ := net.ParseCIDR("127.0.0.2/8")
 
 	// Dial a connection to the rtnetlink socket
 	conn, err := rtnetlink.Dial(nil)
@@ -25,19 +25,19 @@ func Example_deleteAddress() {
 
 	// Test for the right address family for addr
 	family := unix.AF_INET6
-	to4 := addr.IP.To4()
+	to4 := cidr.IP.To4()
 	if to4 != nil {
 		family = unix.AF_INET
 	}
 	// Calculate the prefix length
-	ones, _ := addr.Mask.Size()
+	ones, _ := cidr.Mask.Size()
 
 	// Calculate the broadcast IP
 	// Only used when family is AF_INET
 	var brd net.IP
 	if to4 != nil {
 		brd = make(net.IP, len(to4))
-		binary.BigEndian.PutUint32(brd, binary.BigEndian.Uint32(to4)|^binary.BigEndian.Uint32(net.IP(addr.Mask).To4()))
+		binary.BigEndian.PutUint32(brd, binary.BigEndian.Uint32(to4)|^binary.BigEndian.Uint32(net.IP(cidr.Mask).To4()))
 	}
 
 	// Send the message using the rtnetlink.Conn
@@ -46,7 +46,7 @@ func Example_deleteAddress() {
 		PrefixLength: uint8(ones),
 		Index:        uint32(iface.Index),
 		Attributes: rtnetlink.AddressAttributes{
-			Address:   addr.IP,
+			Address:   addr,
 			Broadcast: brd,
 		},
 	})
