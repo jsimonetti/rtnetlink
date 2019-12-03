@@ -158,6 +158,9 @@ func addrScope(ip net.IP) int {
 	if ip.IsGlobalUnicast() {
 		return unix.RT_SCOPE_UNIVERSE
 	}
+	if ip.IsLoopback() {
+		return unix.RT_SCOPE_HOST
+	}
 	return unix.RT_SCOPE_LINK
 }
 
