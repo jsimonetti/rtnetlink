@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/mdlayher/netlink"
 	"golang.org/x/sys/unix"
@@ -210,6 +211,7 @@ func (c *noopConn) Close() error                                         { retur
 func (c *noopConn) Send(_ netlink.Message) (netlink.Message, error)      { return netlink.Message{}, nil }
 func (c *noopConn) Receive() ([]netlink.Message, error)                  { return nil, nil }
 func (c *noopConn) Execute(m netlink.Message) ([]netlink.Message, error) { return nil, nil }
+func (c *noopConn) SetReadDeadline(t time.Time) error                    { return nil }
 
 func mustMarshal(m encoding.BinaryMarshaler) []byte {
 	b, err := m.MarshalBinary()
