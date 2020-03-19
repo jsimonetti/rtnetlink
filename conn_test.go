@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -221,8 +220,4 @@ func mustMarshal(m encoding.BinaryMarshaler) []byte {
 	}
 
 	return b
-}
-
-func bPrint(b []byte) string {
-	return strings.ReplaceAll(fmt.Sprintf("%# x", b), " ", ", ")
 }
