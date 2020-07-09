@@ -178,8 +178,8 @@ func (l *LinkService) Set(req *LinkMessage) error {
 func (l *LinkService) list(kind string) ([]LinkMessage, error) {
 	req := &LinkMessage{}
 	if kind != "" {
-		req.Attributes = &rtnetlink.LinkAttributes{
-			Info: &rtnetlink.LinkInfo{Kind: kind},
+		req.Attributes = &LinkAttributes{
+			Info: &LinkInfo{Kind: kind},
 		}
 	}
 
