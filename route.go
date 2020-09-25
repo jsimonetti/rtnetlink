@@ -178,6 +178,7 @@ type RouteAttributes struct {
 	Table    uint32
 	Mark     uint32
 	Expires  *uint32
+	Metrics  *RouteMetrics
 }
 
 func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
@@ -215,10 +216,13 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.RTA_EXPIRES:
 			timeout := ad.Uint32()
 			a.Expires = &timeout
+		case unix.RTA_METRICS:
+			a.Metrics = &RouteMetrics{}
+			ad.Nested(a.Metrics.decode)
 		}
 	}
 
-	return nil
+	return ad.Err()
 }
 
 func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
@@ -271,6 +275,55 @@ func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
 
 	if a.Expires != nil {
 		ae.Uint32(unix.RTA_EXPIRES, *a.Expires)
+	}
+
+	if a.Metrics != nil {
+		ae.Nested(unix.RTA_METRICS, a.Metrics.encode)
+	}
+
+	return nil
+}
+
+type RouteMetrics struct {
+	AdvMSS   uint32
+	Features uint32
+	InitCwnd uint32
+	MTU      uint32
+}
+
+func (rm *RouteMetrics) decode(ad *netlink.AttributeDecoder) error {
+	for ad.Next() {
+		switch ad.Type() {
+		case unix.RTAX_ADVMSS:
+			rm.AdvMSS = ad.Uint32()
+		case unix.RTAX_FEATURES:
+			rm.Features = ad.Uint32()
+		case unix.RTAX_INITCWND:
+			rm.InitCwnd = ad.Uint32()
+		case unix.RTAX_MTU:
+			rm.MTU = ad.Uint32()
+		}
+	}
+
+	// ad.Err call handled by Nested method in calling attribute decoder.
+	return nil
+}
+
+func (rm *RouteMetrics) encode(ae *netlink.AttributeEncoder) error {
+	if rm.AdvMSS != 0 {
+		ae.Uint32(unix.RTAX_ADVMSS, rm.AdvMSS)
+	}
+
+	if rm.Features != 0 {
+		ae.Uint32(unix.RTAX_FEATURES, rm.Features)
+	}
+
+	if rm.InitCwnd != 0 {
+		ae.Uint32(unix.RTAX_INITCWND, rm.InitCwnd)
+	}
+
+	if rm.MTU != 0 {
+		ae.Uint32(unix.RTAX_MTU, rm.MTU)
 	}
 
 	return nil

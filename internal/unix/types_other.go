@@ -68,6 +68,11 @@ const (
 	RTA_TABLE            = 0xf
 	RTA_MARK             = 0x10
 	RTA_EXPIRES          = 0x17
+	RTA_METRICS          = 0x8
+	RTAX_ADVMSS          = 0x8
+	RTAX_FEATURES        = 0xc
+	RTAX_INITCWND        = 0xb
+	RTAX_MTU             = 0x2
 	NTF_PROXY            = 0x8
 	RTN_UNICAST          = 0x1
 	RT_TABLE_MAIN        = 0xfe

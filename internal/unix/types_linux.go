@@ -72,6 +72,11 @@ const (
 	RTA_TABLE            = linux.RTA_TABLE
 	RTA_MARK             = linux.RTA_MARK
 	RTA_EXPIRES          = linux.RTA_EXPIRES
+	RTA_METRICS          = linux.RTA_METRICS
+	RTAX_ADVMSS          = linux.RTAX_ADVMSS
+	RTAX_FEATURES        = linux.RTAX_FEATURES
+	RTAX_INITCWND        = linux.RTAX_INITCWND
+	RTAX_MTU             = linux.RTAX_MTU
 	NTF_PROXY            = linux.NTF_PROXY
 	RTN_UNICAST          = linux.RTN_UNICAST
 	RT_TABLE_MAIN        = linux.RT_TABLE_MAIN
