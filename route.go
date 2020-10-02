@@ -284,6 +284,7 @@ func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
 	return nil
 }
 
+// RouteMetrics holds some advanced metrics for a route
 type RouteMetrics struct {
 	AdvMSS   uint32
 	Features uint32
