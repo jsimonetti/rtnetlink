@@ -1,11 +1,10 @@
 package rtnetlink
 
 import (
-	"bytes"
 	"net"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jsimonetti/rtnetlink/internal/unix"
 )
 
@@ -49,6 +48,9 @@ func TestRouteMessageMarshalBinary(t *testing.T) {
 					Gateway:  net.ParseIP("10.10.10.10"),
 					OutIface: 4,
 					Expires:  &timeout,
+					Metrics: &RouteMetrics{
+						MTU: 1500,
+					},
 				},
 			},
 			b: []byte{
@@ -57,7 +59,8 @@ func TestRouteMessageMarshalBinary(t *testing.T) {
 				0x0a, 0x00, 0x00, 0x00, 0x08, 0x00, 0x05, 0x00,
 				0x0a, 0x0a, 0x0a, 0x0a, 0x08, 0x00, 0x04, 0x00,
 				0x04, 0x00, 0x00, 0x00, 0x08, 0x00, 0x17, 0x00,
-				0xff, 0x00, 0x00, 0x00,
+				0xff, 0x00, 0x00, 0x00, 0x0c, 0x00, 0x08, 0x80,
+				0x08, 0x00, 0x02, 0x00, 0xdc, 0x05, 0x00, 0x00,
 			},
 		},
 	}
@@ -73,8 +76,8 @@ func TestRouteMessageMarshalBinary(t *testing.T) {
 				return
 			}
 
-			if want, got := tt.b, b; !bytes.Equal(want, got) {
-				t.Fatalf("unexpected Message bytes:\n- want: [%# x]\n-  got: [%# x]", want, got)
+			if diff := cmp.Diff(tt.b, b); diff != "" {
+				t.Fatalf("unexpected RouteMessage bytes (-want +got):\n%s", diff)
 			}
 		})
 	}
@@ -121,7 +124,8 @@ func TestRouteMessageUnmarshalBinary(t *testing.T) {
 				0x0a, 0x00, 0x00, 0x00, 0x08, 0x00, 0x07, 0x00,
 				0x0a, 0x64, 0x0a, 0x01, 0x08, 0x00, 0x04, 0x00,
 				0x05, 0x00, 0x00, 0x00, 0x08, 0x00, 0x17, 0x00,
-				0xe8, 0x03, 0x00, 0x00,
+				0xe8, 0x03, 0x00, 0x00, 0x0c, 0x00, 0x08, 0x80,
+				0x08, 0x00, 0x02, 0x00, 0xdc, 0x05, 0x00, 0x00,
 			},
 			m: &RouteMessage{
 				Family:    2,
@@ -135,6 +139,9 @@ func TestRouteMessageUnmarshalBinary(t *testing.T) {
 					Src:      net.IP{0x0a, 0x64, 0x0a, 0x01},
 					OutIface: 5,
 					Expires:  &timeout,
+					Metrics: &RouteMetrics{
+						MTU: 1500,
+					},
 				},
 			},
 		},
@@ -152,8 +159,8 @@ func TestRouteMessageUnmarshalBinary(t *testing.T) {
 				return
 			}
 
-			if want, got := tt.m, m; !reflect.DeepEqual(want, got) {
-				t.Fatalf("unexpected Message:\n- want: %#v\n-  got: %#v", want, got)
+			if diff := cmp.Diff(tt.m, m); diff != "" {
+				t.Fatalf("unexpected RouteMessage (-want +got):\n%s", diff)
 			}
 		})
 	}
