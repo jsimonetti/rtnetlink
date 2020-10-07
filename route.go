@@ -2,7 +2,9 @@ package rtnetlink
 
 import (
 	"errors"
+	"fmt"
 	"net"
+	"unsafe"
 
 	"github.com/jsimonetti/rtnetlink/internal/unix"
 
@@ -170,15 +172,17 @@ func (r *RouteService) List() ([]RouteMessage, error) {
 }
 
 type RouteAttributes struct {
-	Dst      net.IP
-	Src      net.IP
-	Gateway  net.IP
-	OutIface uint32
-	Priority uint32
-	Table    uint32
-	Mark     uint32
-	Expires  *uint32
-	Metrics  *RouteMetrics
+	Dst       net.IP
+	Src       net.IP
+	Gateway   net.IP
+	MultPath  RTNextHop
+	OutIface  uint32
+	Priority  uint32
+	Table     uint32
+	Mark      uint32
+	Expires   *uint32
+	Metrics   *RouteMetrics
+	MultiPath RTMultiPath
 }
 
 func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
@@ -219,9 +223,11 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.RTA_METRICS:
 			a.Metrics = &RouteMetrics{}
 			ad.Nested(a.Metrics.decode)
+		case unix.RTA_MULTIPATH:
+			a.MultiPath = RTMultiPath{}
+			ad.Nested(a.MultiPath.decode)
 		}
 	}
-
 	return ad.Err()
 }
 
@@ -327,5 +333,103 @@ func (rm *RouteMetrics) encode(ae *netlink.AttributeEncoder) error {
 		ae.Uint32(unix.RTAX_MTU, rm.MTU)
 	}
 
+	return nil
+}
+
+// RTNextHop represents the netlink rtnexthop struct (not an attribute)
+type RTNextHop struct {
+	Length  uint16 // length of this hop including nested values
+	Flags   uint8  // flags defined in rtnetlink.h line 311
+	Hops    uint8
+	IfIndex uint32 // the interface index number
+}
+
+// NextHop wraps struct rtnexthop to provide access to nested attributes
+type NextHop struct {
+	Hop     RTNextHop // a rtnexthop struct
+	Gateway net.IP    // that struct's nested Gateway attribute
+	Value   []byte    // raw multipath `value` bytes (temporary for debugging)
+}
+
+// The RT_MULTIPATH netlink attribute contains a payload of `array of struct rtnexthop`
+type RTMultiPath []NextHop
+
+// consider instead creating an rtnetlink.MultiPathDecoder type
+// analogous to netlink.AttributeDecoder
+func (mp *RTMultiPath) decode(ad *netlink.AttributeDecoder) error {
+	const sizeOfRTNextHop = 8 // an rtNextHop is 8 bytes wide
+	// get RTA_Multipath data
+	mpData := ad.Bytes()
+	mpPayloadSize := len(mpData) // width of the multipath `value`(payload)
+
+	// check for truncated message
+	if mpPayloadSize <= sizeOfRTNextHop {
+		return errInvalidRouteMessageAttr
+	}
+
+	// Iterate through the nested array of rtnexthop, unpacking each and appending them to mp
+	for i := 0; i <= mpPayloadSize; {
+		// check for end of message
+		payloadRemaining := mpPayloadSize - i
+		if payloadRemaining < sizeOfRTNextHop {
+			return nil
+		}
+
+		// Copy over the struct portion
+		nh := NextHop{
+			Hop: RTNextHop{},
+		}
+		copy(
+			(*(*[sizeOfRTNextHop]byte)(unsafe.Pointer(&nh.Hop)))[:],
+			(*(*[sizeOfRTNextHop]byte)(unsafe.Pointer(&mpData)))[i:],
+		)
+
+		// check again for a truncated message
+		if int(nh.Hop.Length) > mpPayloadSize {
+			return errInvalidRouteMessageAttr
+		}
+
+		// grab a new attributedecoder for the nested attributes
+		payloadStart := (i + sizeOfRtNextHop)
+		payloadEnd := (i + nh.Hop.Length)
+		nhDecoder, err := netlink.NewAttributeDecoder(mpData[payloadStart:payloadEnd])
+		nhDecoder.ByteOrder = nativeEndian
+		if err != nil {
+			return err
+		}
+
+		// read in the nested attributes
+		if err := nh.decode(nhDecoder); err != nil {
+			return errInvalidRouteMessageAttr
+		}
+
+		// append this hop to the parent Multipath struct
+		*mp = append(*mp, nh)
+
+		// move forward to the next element in multipath.[]nexthop
+		i += int(nh.Hop.Length)
+	}
+	return nil
+}
+
+// TODO: Implement func (mp *RTMultiPath) encode()
+
+// rtnexthop payload is at least one nested attribute RTA_GATEWAY
+// possibly others?
+func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
+	nh.Value = ad.Bytes() // keep this handy for now
+	for ad.Next() {
+		switch ad.Type() {
+		case unix.RTA_GATEWAY:
+			l := len(ad.Bytes())
+			if l != 4 && l != 16 {
+				return errInvalidRouteMessageAttr
+			}
+			nh.Gateway = ad.Bytes()
+		default:
+			//temp debugging
+			fmt.Printf("nexthop.decode(): missed nested value of type: %x", ad.Type())
+		}
+	}
 	return nil
 }
