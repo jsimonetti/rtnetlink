@@ -3,6 +3,7 @@ package rtnetlink
 import (
 	"errors"
 	"net"
+	"unsafe"
 
 	"github.com/jsimonetti/rtnetlink/internal/unix"
 
@@ -47,7 +48,6 @@ func (m *RouteMessage) MarshalBinary() ([]byte, error) {
 	nativeEndian.PutUint32(b[8:12], m.Flags)
 
 	ae := netlink.NewAttributeEncoder()
-	ae.ByteOrder = nativeEndian
 	err := m.Attributes.encode(ae)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,6 @@ func (m *RouteMessage) UnmarshalBinary(b []byte) error {
 	if l > unix.SizeofRtMsg {
 		m.Attributes = RouteAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[unix.SizeofRtMsg:])
-		ad.ByteOrder = nativeEndian
 		if err != nil {
 			return err
 		}
@@ -170,15 +169,16 @@ func (r *RouteService) List() ([]RouteMessage, error) {
 }
 
 type RouteAttributes struct {
-	Dst      net.IP
-	Src      net.IP
-	Gateway  net.IP
-	OutIface uint32
-	Priority uint32
-	Table    uint32
-	Mark     uint32
-	Expires  *uint32
-	Metrics  *RouteMetrics
+	Dst       net.IP
+	Src       net.IP
+	Gateway   net.IP
+	OutIface  uint32
+	Priority  uint32
+	Table     uint32
+	Mark      uint32
+	Expires   *uint32
+	Metrics   *RouteMetrics
+	Multipath []NextHop
 }
 
 func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
@@ -219,6 +219,8 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.RTA_METRICS:
 			a.Metrics = &RouteMetrics{}
 			ad.Nested(a.Metrics.decode)
+		case unix.RTA_MULTIPATH:
+			ad.Do(a.parseMultipath)
 		}
 	}
 
@@ -226,7 +228,6 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 }
 
 func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
-
 	if a.Dst != nil {
 		if ipv4 := a.Dst.To4(); ipv4 == nil {
 			// Dst Addr is IPv6
@@ -281,6 +282,10 @@ func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
 		ae.Nested(unix.RTA_METRICS, a.Metrics.encode)
 	}
 
+	if len(a.Multipath) > 0 {
+		ae.Do(unix.RTA_MULTIPATH, a.encodeMultipath)
+	}
+
 	return nil
 }
 
@@ -328,4 +333,128 @@ func (rm *RouteMetrics) encode(ae *netlink.AttributeEncoder) error {
 	}
 
 	return nil
+}
+
+// TODO(mdlayher): probably eliminate Length field from the API to avoid the
+// caller possibly tampering with it since we can compute it.
+
+// RTNextHop represents the netlink rtnexthop struct (not an attribute)
+type RTNextHop struct {
+	Length  uint16 // length of this hop including nested values
+	Flags   uint8  // flags defined in rtnetlink.h line 311
+	Hops    uint8
+	IfIndex uint32 // the interface index number
+}
+
+// NextHop wraps struct rtnexthop to provide access to nested attributes
+type NextHop struct {
+	Hop     RTNextHop // a rtnexthop struct
+	Gateway net.IP    // that struct's nested Gateway attribute
+}
+
+func (a *RouteAttributes) encodeMultipath() ([]byte, error) {
+	var b []byte
+	for _, nh := range a.Multipath {
+		// Encode the attributes first so their total length can be used to
+		// compute the length of each (rtnexthop, attributes) pair.
+		ae := netlink.NewAttributeEncoder()
+
+		if a.Gateway != nil {
+			// TODO(mdlayher): more validation.
+			ae.Bytes(unix.RTA_GATEWAY, nh.Gateway)
+		}
+
+		ab, err := ae.Encode()
+		if err != nil {
+			return nil, err
+		}
+
+		// Assume the caller wants the length updated so they don't have to
+		// keep track of it themselves when encoding attributes.
+		nh.Hop.Length = unix.SizeofRtNexthop + uint16(len(ab))
+		var nhb [unix.SizeofRtNexthop]byte
+
+		copy(
+			nhb[:],
+			(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&nh.Hop)))[:],
+		)
+
+		// rtnexthop first, then attributes.
+		b = append(b, nhb[:]...)
+		b = append(b, ab...)
+	}
+
+	return b, nil
+}
+
+func (a *RouteAttributes) parseMultipath(b []byte) error {
+	// check for truncated message
+	if len(b) <= unix.SizeofRtNexthop {
+		return errInvalidRouteMessageAttr
+	}
+
+	// Iterate through the nested array of rtnexthop, unpacking each and appending them to mp
+	for i := 0; i <= len(b); {
+		// check for end of message
+		if len(b)-i < unix.SizeofRtNexthop {
+			return nil
+		}
+
+		// Copy over the struct portion
+		var nh NextHop
+		var nhb [unix.SizeofRtNexthop]byte
+		copy(nhb[:], b[i:i+unix.SizeofRtNexthop])
+
+		copy(
+			(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&nh.Hop)))[:],
+			(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&nhb[0])))[:],
+		)
+
+		// check again for a truncated message
+		if int(nh.Hop.Length) > len(b) {
+			return errInvalidRouteMessageAttr
+		}
+
+		// grab a new attributedecoder for the nested attributes
+		start := (i + unix.SizeofRtNexthop)
+		end := (i + int(nh.Hop.Length))
+
+		ad, err := netlink.NewAttributeDecoder(b[start:end])
+		if err != nil {
+			return err
+		}
+
+		// read in the nested attributes
+		if err := nh.decode(ad); err != nil {
+			return err
+		}
+
+		// append this hop to the parent Multipath struct
+		a.Multipath = append(a.Multipath, nh)
+
+		// move forward to the next element in multipath.[]nexthop
+		i += int(nh.Hop.Length)
+	}
+
+	return nil
+}
+
+// TODO: Implement func (mp *RTMultiPath) encode()
+
+// rtnexthop payload is at least one nested attribute RTA_GATEWAY
+// possibly others?
+func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
+	for ad.Next() {
+		switch ad.Type() {
+		case unix.RTA_GATEWAY:
+			l := len(ad.Bytes())
+			if l != 4 && l != 16 {
+				return errInvalidRouteMessageAttr
+			}
+
+			nh.Gateway = ad.Bytes()
+		}
+	}
+
+	return ad.Err()
 }

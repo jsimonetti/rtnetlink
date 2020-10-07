@@ -11,6 +11,7 @@ const (
 	SizeofIfInfomsg      = 0x10
 	SizeofNdMsg          = 0xc
 	SizeofRtMsg          = 0xc
+	SizeofRtNexthop      = 0x8
 	RTM_NEWADDR          = 0x14
 	RTM_DELADDR          = 0x15
 	RTM_GETADDR          = 0x16
@@ -69,6 +70,7 @@ const (
 	RTA_MARK             = 0x10
 	RTA_EXPIRES          = 0x17
 	RTA_METRICS          = 0x8
+	RTA_MULTIPATH        = 0x9
 	RTAX_ADVMSS          = 0x8
 	RTAX_FEATURES        = 0xc
 	RTAX_INITCWND        = 0xb
