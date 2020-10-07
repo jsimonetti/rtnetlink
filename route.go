@@ -390,8 +390,8 @@ func (mp *RTMultiPath) decode(ad *netlink.AttributeDecoder) error {
 		}
 
 		// grab a new attributedecoder for the nested attributes
-		payloadStart := (i + sizeOfRtNextHop)
-		payloadEnd := (i + nh.Hop.Length)
+		payloadStart := (i + sizeOfRTNextHop)
+		payloadEnd := (i + int(nh.Hop.Length))
 		nhDecoder, err := netlink.NewAttributeDecoder(mpData[payloadStart:payloadEnd])
 		nhDecoder.ByteOrder = nativeEndian
 		if err != nil {
