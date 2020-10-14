@@ -397,7 +397,7 @@ func (mp *RTMultiPath) decode(ad *netlink.AttributeDecoder) error {
 
 		// read in the nested attributes
 		if err := nh.decode(nhDecoder); err != nil {
-			return errInvalidRouteMessageAttr
+			return err
 		}
 
 		// append this hop to the parent Multipath struct
@@ -428,5 +428,5 @@ func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
 			fmt.Printf("nexthop.decode(): missed nested value of type: %x", ad.Type())
 		}
 	}
-	return nil
+	return ad.Err()
 }
