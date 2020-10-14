@@ -357,7 +357,7 @@ type RTMultiPath []NextHop
 // consider instead creating an rtnetlink.MultiPathDecoder type
 // analogous to netlink.AttributeDecoder
 func (mp *RTMultiPath) decode(ad *netlink.AttributeDecoder) error {
-	const sizeOfRTNextHop = 8 // an rtNextHop is 8 bytes wide
+	const sizeOfRTNextHop = unix.SizeofRtNexthop // 8 bytes wide on linux
 	// get RTA_Multipath data
 	mpData := ad.Bytes()
 	mpPayloadSize := len(mpData) // width of the multipath `value`(payload)

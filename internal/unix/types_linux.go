@@ -15,6 +15,7 @@ const (
 	SizeofIfInfomsg      = linux.SizeofIfInfomsg
 	SizeofNdMsg          = linux.SizeofNdMsg
 	SizeofRtMsg          = linux.SizeofRtMsg
+	SizeofRtNexthop      = linux.SizeofRtNexthop
 	RTM_NEWADDR          = linux.RTM_NEWADDR
 	RTM_DELADDR          = linux.RTM_DELADDR
 	RTM_GETADDR          = linux.RTM_GETADDR

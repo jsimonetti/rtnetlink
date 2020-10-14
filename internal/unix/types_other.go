@@ -11,6 +11,7 @@ const (
 	SizeofIfInfomsg      = 0x10
 	SizeofNdMsg          = 0xc
 	SizeofRtMsg          = 0xc
+	SizeofRtNexthop      = 0x8
 	RTM_NEWADDR          = 0x14
 	RTM_DELADDR          = 0x15
 	RTM_GETADDR          = 0x16
