@@ -49,7 +49,6 @@ func (m *RouteMessage) MarshalBinary() ([]byte, error) {
 	nativeEndian.PutUint32(b[8:12], m.Flags)
 
 	ae := netlink.NewAttributeEncoder()
-	ae.ByteOrder = nativeEndian
 	err := m.Attributes.encode(ae)
 	if err != nil {
 		return nil, err
@@ -82,7 +81,6 @@ func (m *RouteMessage) UnmarshalBinary(b []byte) error {
 	if l > unix.SizeofRtMsg {
 		m.Attributes = RouteAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[unix.SizeofRtMsg:])
-		ad.ByteOrder = nativeEndian
 		if err != nil {
 			return err
 		}
@@ -393,7 +391,6 @@ func (mp *RTMultiPath) decode(ad *netlink.AttributeDecoder) error {
 		payloadStart := (i + sizeOfRTNextHop)
 		payloadEnd := (i + int(nh.Hop.Length))
 		nhDecoder, err := netlink.NewAttributeDecoder(mpData[payloadStart:payloadEnd])
-		nhDecoder.ByteOrder = nativeEndian
 		if err != nil {
 			return err
 		}
