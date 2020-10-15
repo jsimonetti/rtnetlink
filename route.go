@@ -173,7 +173,6 @@ type RouteAttributes struct {
 	Dst       net.IP
 	Src       net.IP
 	Gateway   net.IP
-	MultPath  RTNextHop
 	OutIface  uint32
 	Priority  uint32
 	Table     uint32
@@ -352,8 +351,6 @@ type NextHop struct {
 // The RT_MULTIPATH netlink attribute contains a payload of `array of struct rtnexthop`
 type RTMultiPath []NextHop
 
-// consider instead creating an rtnetlink.MultiPathDecoder type
-// analogous to netlink.AttributeDecoder
 func (mp *RTMultiPath) decode(ad *netlink.AttributeDecoder) error {
 	const sizeOfRTNextHop = unix.SizeofRtNexthop // 8 bytes wide on linux
 	// get RTA_Multipath data
@@ -377,9 +374,13 @@ func (mp *RTMultiPath) decode(ad *netlink.AttributeDecoder) error {
 		nh := NextHop{
 			Hop: RTNextHop{},
 		}
+
+		var mpSlice [sizeOfRTNextHop]byte
+		copy(mpSlice[:], mpData[i:i+sizeOfRTNextHop])
+
 		copy(
 			(*(*[sizeOfRTNextHop]byte)(unsafe.Pointer(&nh.Hop)))[:],
-			(*(*[sizeOfRTNextHop]byte)(unsafe.Pointer(&mpData)))[i:],
+			(*(*[sizeOfRTNextHop]byte)(unsafe.Pointer(&mpSlice)))[:],
 		)
 
 		// check again for a truncated message
