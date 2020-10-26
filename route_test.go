@@ -63,6 +63,22 @@ func TestRouteMessageMarshalUnmarshalBinary(t *testing.T) {
 						InitCwnd: 2,
 						MTU:      1500,
 					},
+					Multipath: []NextHop{
+						{
+							Hop: RTNextHop{
+								Length:  16,
+								IfIndex: 1,
+							},
+							Gateway: net.IPv4(10, 0, 0, 2),
+						},
+						{
+							Hop: RTNextHop{
+								Length:  16,
+								IfIndex: 2,
+							},
+							Gateway: net.IPv4(10, 0, 0, 3),
+						},
+					},
 				},
 			},
 			b: []byte{
@@ -128,6 +144,25 @@ func TestRouteMessageMarshalUnmarshalBinary(t *testing.T) {
 				// MTU
 				0x08, 0x00, 0x02, 0x00,
 				0xdc, 0x05, 0x00, 0x00,
+				// Multipath
+				//
+				// 2 bytes length, 2 bytes type, then repeated 8 byte rtnexthop
+				// structures followed by their nested netlink attributes.
+				0x24, 0x00, 0x09, 0x00,
+				// rtnexthop
+				0x10, 0x00, 0x00, 0x00,
+				0x01, 0x00, 0x00, 0x00,
+				// rtnexthop attributes
+				0x08, 0x00, 0x05, 0x00,
+				// Gateway
+				10, 0, 0, 2,
+				// rtnexthop
+				0x10, 0x00, 0x00, 0x00,
+				0x02, 0x00, 0x00, 0x00,
+				// rtnexthop attributes
+				0x08, 0x00, 0x05, 0x00,
+				// Gateway
+				10, 0, 0, 3,
 			},
 		},
 	}

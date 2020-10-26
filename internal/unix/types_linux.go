@@ -15,6 +15,7 @@ const (
 	SizeofIfInfomsg      = linux.SizeofIfInfomsg
 	SizeofNdMsg          = linux.SizeofNdMsg
 	SizeofRtMsg          = linux.SizeofRtMsg
+	SizeofRtNexthop      = linux.SizeofRtNexthop
 	RTM_NEWADDR          = linux.RTM_NEWADDR
 	RTM_DELADDR          = linux.RTM_DELADDR
 	RTM_GETADDR          = linux.RTM_GETADDR
@@ -73,6 +74,7 @@ const (
 	RTA_MARK             = linux.RTA_MARK
 	RTA_EXPIRES          = linux.RTA_EXPIRES
 	RTA_METRICS          = linux.RTA_METRICS
+	RTA_MULTIPATH        = linux.RTA_MULTIPATH
 	RTAX_ADVMSS          = linux.RTAX_ADVMSS
 	RTAX_FEATURES        = linux.RTAX_FEATURES
 	RTAX_INITCWND        = linux.RTAX_INITCWND
