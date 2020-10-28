@@ -15,7 +15,7 @@ func (c *Conn) Links() (r []*net.Interface, err error) {
 		return nil, err
 	}
 	for _, m := range rx {
-		ifc := linkmsgToInterface(&m)
+		ifc := linkmsgToInterface(m)
 		r = append(r, ifc)
 	}
 	return r, nil
@@ -27,7 +27,7 @@ func (c *Conn) LinkByIndex(ifindex int) (*net.Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	return linkmsgToInterface(&rx), nil
+	return linkmsgToInterface(rx), nil
 }
 
 func linkmsgToInterface(m *rtnetlink.LinkMessage) *net.Interface {

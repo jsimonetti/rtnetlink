@@ -29,7 +29,7 @@ func Example_listNeighbors() {
 	}
 
 	// Filter neighbors by family and interface index
-	var neigh []rtnetlink.NeighMessage
+	var neigh []*rtnetlink.NeighMessage
 	for _, v := range msg {
 		add := true
 		if iface != nil && v.Index != uint32(iface.Index) {

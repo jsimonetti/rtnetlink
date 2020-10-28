@@ -29,7 +29,7 @@ func Example_listAddress() {
 	}
 
 	// Filter out the wanted messages and put them in the 'addr' slice.
-	var addr []rtnetlink.AddressMessage
+	var addr []*rtnetlink.AddressMessage
 	for _, v := range msg {
 		add := true
 		if iface != nil && v.Index != uint32(iface.Index) {

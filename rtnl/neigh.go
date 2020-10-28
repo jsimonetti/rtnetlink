@@ -30,7 +30,7 @@ func (c *Conn) Neighbours(ifc *net.Interface, family int) (r []*Neigh, err error
 	}
 	ifcache := map[int]*net.Interface{}
 	for _, m := range rx {
-		if !match(&m, ifc, family) {
+		if !match(m, ifc, family) {
 			continue
 		}
 		ifindex := int(m.Index)

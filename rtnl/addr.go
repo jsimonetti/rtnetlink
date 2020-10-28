@@ -95,7 +95,7 @@ func (c *Conn) Addrs(ifc *net.Interface, family int) (out []*net.IPNet, err erro
 		return true
 	}
 	for _, m := range rx {
-		if match(&m, ifc, family) {
+		if match(m, ifc, family) {
 			bitlen := 8 * len(m.Attributes.Address)
 			a := &net.IPNet{
 				IP:   m.Attributes.Address,
