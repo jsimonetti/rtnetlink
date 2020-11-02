@@ -221,6 +221,7 @@ type LinkAttributes struct {
 	Stats            *LinkStats       // Interface Statistics
 	Stats64          *LinkStats64     // Interface Statistics (64 bits version)
 	Info             *LinkInfo        // Detailed Interface Information
+	XDP              *LinkXDP         // Express Data Patch Information
 }
 
 // OperationalState represents an interface's operational state.
@@ -286,6 +287,9 @@ func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.IFLA_MASTER:
 			v := ad.Uint32()
 			a.Master = &v
+		case unix.IFLA_XDP:
+			a.XDP = &LinkXDP{}
+			ad.Nested(a.XDP.decode)
 		}
 	}
 
@@ -328,6 +332,22 @@ func (a *LinkAttributes) encode(ae *netlink.AttributeEncoder) error {
 			return err
 		}
 		ae.Bytes(unix.IFLA_LINKINFO, b)
+	}
+
+	if a.XDP != nil {
+		nae := netlink.NewAttributeEncoder()
+		nae.ByteOrder = ae.ByteOrder
+
+		err := a.XDP.encode(nae)
+		if err != nil {
+			return err
+		}
+		b, err := nae.Encode()
+		if err != nil {
+			return err
+		}
+
+		ae.Bytes(unix.IFLA_XDP, b)
 	}
 
 	if a.Master != nil {
@@ -523,6 +543,45 @@ func (i *LinkInfo) encode(ae *netlink.AttributeEncoder) error {
 		ae.String(unix.IFLA_INFO_SLAVE_KIND, i.SlaveKind)
 		ae.Bytes(unix.IFLA_INFO_SLAVE_DATA, i.SlaveData)
 	}
+
+	return nil
+}
+
+// LinkXDP holds Express Data Path specific information
+type LinkXDP struct {
+	FD         uint32
+	ExpectedFD uint32
+	Attached   uint8
+	Flags      uint32
+	ProgID     uint32
+}
+
+func (xdp *LinkXDP) decode(ad *netlink.AttributeDecoder) error {
+
+	for ad.Next() {
+		switch ad.Type() {
+		case unix.IFLA_XDP_FD:
+			xdp.FD = ad.Uint32()
+		case unix.IFLA_XDP_EXPECTED_FD:
+			xdp.ExpectedFD = ad.Uint32()
+		case unix.IFLA_XDP_ATTACHED:
+			xdp.Attached = ad.Uint8()
+		case unix.IFLA_XDP_FLAGS:
+			xdp.Flags = ad.Uint32()
+		case unix.IFLA_XDP_PROG_ID:
+			xdp.ProgID = ad.Uint32()
+		}
+	}
+	return nil
+}
+
+func (xdp *LinkXDP) encode(ae *netlink.AttributeEncoder) error {
+
+	ae.Uint32(unix.IFLA_XDP_FD, xdp.FD)
+	ae.Uint32(unix.IFLA_XDP_EXPECTED_FD, xdp.ExpectedFD)
+	ae.Uint8(unix.IFLA_XDP_ATTACHED, xdp.Attached)
+	ae.Uint32(unix.IFLA_XDP_FLAGS, xdp.Flags)
+	ae.Uint32(unix.IFLA_XDP_PROG_ID, xdp.ProgID)
 
 	return nil
 }
