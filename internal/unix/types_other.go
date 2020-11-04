@@ -55,6 +55,12 @@ const (
 	IFLA_INFO_SLAVE_KIND = 0x4
 	IFLA_INFO_DATA       = 0x2
 	IFLA_INFO_SLAVE_DATA = 0x5
+	IFLA_XDP             = 0x2b
+	IFLA_XDP_FD          = 0x1
+	IFLA_XDP_ATTACHED    = 0x2
+	IFLA_XDP_FLAGS       = 0x3
+	IFLA_XDP_PROG_ID     = 0x4
+	IFLA_XDP_EXPECTED_FD = 0x8
 	NDA_UNSPEC           = 0x0
 	NDA_DST              = 0x1
 	NDA_LLADDR           = 0x2
