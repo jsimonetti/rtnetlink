@@ -266,13 +266,18 @@ func TestRouteMessageFuzz(t *testing.T) {
 				"\b\x00\a\x00\xbfA\b\xf9\b\x00\a\x00\xd3\xea\xf9A\b\x00\a\x00" +
 				"\xd3\xea\xf9A\b\x00\a\x00\xbfA\b\xf9\b\x00\a\x00\xd3-\xbf\xbd",
 		},
+		{
+			name: "out of bounds attributes length",
+			s: "000000000000\x14\x00\t\x000\xea00" +
+				"000000000000",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var m RouteMessage
-			if err := m.UnmarshalBinary([]byte(tt.s)); err != nil {
-				t.Fatalf("failed to unmarshal: %v", err)
+			if err := m.UnmarshalBinary([]byte(tt.s)); err == nil {
+				t.Fatal("expected an error, but none occurred")
 			}
 		})
 	}

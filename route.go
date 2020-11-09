@@ -413,7 +413,8 @@ func (a *RouteAttributes) parseMultipath(b []byte) error {
 		a.Multipath = append(a.Multipath, nh)
 	}
 
-	return nil
+	// Check the error when Next returns false.
+	return mpp.Err()
 }
 
 // rtnexthop payload is at least one nested attribute RTA_GATEWAY
@@ -516,6 +517,13 @@ func (mpp *multipathParser) RTNextHop() RTNextHop {
 // of netlink attributes from the buffer.
 func (mpp *multipathParser) AttributeDecoder() *netlink.AttributeDecoder {
 	if mpp.err != nil {
+		return nil
+	}
+
+	// Ensure the attributes length value computed while parsing the rtnexthop
+	// fits within the actual slice.
+	if len(mpp.b[mpp.i:]) < mpp.alen {
+		mpp.err = errInvalidRouteMessageAttr
 		return nil
 	}
 
