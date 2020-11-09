@@ -504,6 +504,12 @@ func (mpp *multipathParser) RTNextHop() RTNextHop {
 		(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&next[0])))[:],
 	)
 
+	if rtnh.Length < unix.SizeofRtNexthop {
+		// Length value is invalid.
+		mpp.err = errInvalidRouteMessageAttr
+		return RTNextHop{}
+	}
+
 	// Compute the length of the next set of attributes using the Length value
 	// in the RTNextHop, minus the size of that fixed length structure itself.
 	// Then, advance the pointer to be ready to read those attributes.

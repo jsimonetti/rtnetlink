@@ -271,6 +271,12 @@ func TestRouteMessageFuzz(t *testing.T) {
 			s: "000000000000\x14\x00\t\x000\xea00" +
 				"000000000000",
 		},
+		{
+			name: "bad rtnexthop length",
+			s: "000000000000!\x00\t\x00\b\x0000" +
+				"0000\b\x00000000\x06\x00000000" +
+				"00000",
+		},
 	}
 
 	for _, tt := range tests {
