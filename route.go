@@ -459,8 +459,18 @@ func (mpp *multipathParser) Next() bool {
 		return false
 	}
 
-	// Are there any bytes left to consume?
-	return len(mpp.b[mpp.i:]) > 0
+	// Are there enough bytes left for another RTNextHop, or 0 for EOF?
+	n := len(mpp.b[mpp.i:])
+	switch {
+	case n == 0:
+		// EOF.
+		return false
+	case n >= unix.SizeofRtNexthop:
+		return true
+	default:
+		mpp.err = errInvalidRouteMessageAttr
+		return false
+	}
 }
 
 // Err returns any errors encountered while parsing.
@@ -474,6 +484,7 @@ func (mpp *multipathParser) RTNextHop() RTNextHop {
 
 	if len(mpp.b)-mpp.i < unix.SizeofRtNexthop {
 		// Out of bounds access, not enough data for a valid RTNextHop.
+		mpp.err = errInvalidRouteMessageAttr
 		return RTNextHop{}
 	}
 

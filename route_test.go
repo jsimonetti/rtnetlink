@@ -250,6 +250,34 @@ func TestRouteMessageUnmarshalBinaryErrors(t *testing.T) {
 	}
 }
 
+func TestRouteMessageFuzz(t *testing.T) {
+	skipBigEndian(t)
+
+	tests := []struct {
+		name string
+		s    string
+	}{
+		// Strings in this test table are copied from go-fuzz crashers.
+		{
+			name: "short rtnexthop",
+			s: "\xef\xbf\xea\x00\a\x00\xd1\xea\xf9A\b\xf9\b\x00\t\x00\xbfA\b\xf9" +
+				"\b\x00\a\x00\xf9A\b\xf9\b\x00\a\x00\xbfA\b\xf9\b\x00\a\x00" +
+				"\xd3\xea\xf9A\b\x00\a\u007f\xff\xff\xffA\b\x00\a\x00\xd3\xea\xf9A" +
+				"\b\x00\a\x00\xbfA\b\xf9\b\x00\a\x00\xd3\xea\xf9A\b\x00\a\x00" +
+				"\xd3\xea\xf9A\b\x00\a\x00\xbfA\b\xf9\b\x00\a\x00\xd3-\xbf\xbd",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var m RouteMessage
+			if err := m.UnmarshalBinary([]byte(tt.s)); err != nil {
+				t.Fatalf("failed to unmarshal: %v", err)
+			}
+		})
+	}
+}
+
 func compareErrors(x, y error) bool {
 	// This is lazy but should be sufficient for the typical stringified errors
 	// returned by this package.
