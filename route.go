@@ -387,63 +387,44 @@ func (a *RouteAttributes) encodeMultipath() ([]byte, error) {
 	return b, nil
 }
 
+// parseMultipath consumes RTA_MULTIPATH data into RouteAttributes.
 func (a *RouteAttributes) parseMultipath(b []byte) error {
-	// check for truncated message
-	if len(b) <= unix.SizeofRtNexthop {
-		return errInvalidRouteMessageAttr
-	}
+	// We cannot retain b after the function returns, so make a copy of the
+	// bytes up front for the multipathParser.
+	buf := make([]byte, len(b))
+	copy(buf, b)
 
-	// Iterate through the nested array of rtnexthop, unpacking each and appending them to mp
-	for i := 0; i <= len(b); {
-		// check for end of message
-		if len(b)-i < unix.SizeofRtNexthop {
-			return nil
-		}
-
-		// Copy over the struct portion
-		var nh NextHop
-		var nhb [unix.SizeofRtNexthop]byte
-		copy(nhb[:], b[i:i+unix.SizeofRtNexthop])
-
-		copy(
-			(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&nh.Hop)))[:],
-			(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&nhb[0])))[:],
-		)
-
-		// check again for a truncated message
-		if int(nh.Hop.Length) > len(b) {
-			return errInvalidRouteMessageAttr
-		}
-
-		// grab a new attributedecoder for the nested attributes
-		start := (i + unix.SizeofRtNexthop)
-		end := (i + int(nh.Hop.Length))
-
-		ad, err := netlink.NewAttributeDecoder(b[start:end])
-		if err != nil {
+	// Iterate until no more bytes remain in the buffer or an error occurs.
+	mpp := &multipathParser{b: buf}
+	for mpp.Next() {
+		// Each iteration reads a fixed length RTNextHop structure immediately
+		// followed by its associated netlink attributes with optional data.
+		nh := NextHop{Hop: mpp.RTNextHop()}
+		if err := nh.decode(mpp.AttributeDecoder()); err != nil {
 			return err
 		}
 
-		// read in the nested attributes
-		if err := nh.decode(ad); err != nil {
+		// Stop iteration early if the data was malformed, or otherwise append
+		// this NextHop to the Multipath field.
+		if err := mpp.Err(); err != nil {
 			return err
 		}
 
-		// append this hop to the parent Multipath struct
 		a.Multipath = append(a.Multipath, nh)
-
-		// move forward to the next element in multipath.[]nexthop
-		i += int(nh.Hop.Length)
 	}
 
-	return nil
+	// Check the error when Next returns false.
+	return mpp.Err()
 }
-
-// TODO: Implement func (mp *RTMultiPath) encode()
 
 // rtnexthop payload is at least one nested attribute RTA_GATEWAY
 // possibly others?
 func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
+	if ad == nil {
+		// Invalid decoder, do nothing.
+		return nil
+	}
+
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.RTA_GATEWAY:
@@ -457,4 +438,110 @@ func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
 	}
 
 	return ad.Err()
+}
+
+// A multipathParser parses packed RTNextHop and netlink attributes into
+// multipath attributes for an rtnetlink route.
+type multipathParser struct {
+	// Any errors which occurred during parsing.
+	err error
+
+	// The underlying buffer and a pointer to the reading position.
+	b []byte
+	i int
+
+	// The length of the next set of netlink attributes.
+	alen int
+}
+
+// Next continues iteration until an error occurs or no bytes remain.
+func (mpp *multipathParser) Next() bool {
+	if mpp.err != nil {
+		return false
+	}
+
+	// Are there enough bytes left for another RTNextHop, or 0 for EOF?
+	n := len(mpp.b[mpp.i:])
+	switch {
+	case n == 0:
+		// EOF.
+		return false
+	case n >= unix.SizeofRtNexthop:
+		return true
+	default:
+		mpp.err = errInvalidRouteMessageAttr
+		return false
+	}
+}
+
+// Err returns any errors encountered while parsing.
+func (mpp *multipathParser) Err() error { return mpp.err }
+
+// RTNextHop parses the next RTNextHop structure from the buffer.
+func (mpp *multipathParser) RTNextHop() RTNextHop {
+	if mpp.err != nil {
+		return RTNextHop{}
+	}
+
+	if len(mpp.b)-mpp.i < unix.SizeofRtNexthop {
+		// Out of bounds access, not enough data for a valid RTNextHop.
+		mpp.err = errInvalidRouteMessageAttr
+		return RTNextHop{}
+	}
+
+	// Consume an RTNextHop from the buffer by copying its bytes into an output
+	// structure while also verifying that the size of each structure is equal
+	// to avoid any out-of-bounds unsafe memory access.
+	var rtnh RTNextHop
+	next := mpp.b[mpp.i : mpp.i+unix.SizeofRtNexthop]
+
+	if unix.SizeofRtNexthop != len(next) {
+		panic("rtnetlink: invalid RTNextHop structure size, panicking to avoid out-of-bounds unsafe access")
+	}
+
+	copy(
+		(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&rtnh)))[:],
+		(*(*[unix.SizeofRtNexthop]byte)(unsafe.Pointer(&next[0])))[:],
+	)
+
+	if rtnh.Length < unix.SizeofRtNexthop {
+		// Length value is invalid.
+		mpp.err = errInvalidRouteMessageAttr
+		return RTNextHop{}
+	}
+
+	// Compute the length of the next set of attributes using the Length value
+	// in the RTNextHop, minus the size of that fixed length structure itself.
+	// Then, advance the pointer to be ready to read those attributes.
+	mpp.alen = int(rtnh.Length) - unix.SizeofRtNexthop
+	mpp.i += unix.SizeofRtNexthop
+
+	return rtnh
+}
+
+// AttributeDecoder returns a netlink.AttributeDecoder pointed at the next set
+// of netlink attributes from the buffer.
+func (mpp *multipathParser) AttributeDecoder() *netlink.AttributeDecoder {
+	if mpp.err != nil {
+		return nil
+	}
+
+	// Ensure the attributes length value computed while parsing the rtnexthop
+	// fits within the actual slice.
+	if len(mpp.b[mpp.i:]) < mpp.alen {
+		mpp.err = errInvalidRouteMessageAttr
+		return nil
+	}
+
+	// Consume the next set of netlink attributes from the buffer and advance
+	// the pointer to the next RTNextHop or EOF once that is complete.
+	ad, err := netlink.NewAttributeDecoder(mpp.b[mpp.i : mpp.i+mpp.alen])
+	if err != nil {
+		mpp.err = err
+		return nil
+	}
+
+	mpp.i += mpp.alen
+
+	return ad
 }
