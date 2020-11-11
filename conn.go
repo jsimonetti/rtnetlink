@@ -135,7 +135,7 @@ func (c *Conn) Execute(m Message, family uint16, flags netlink.HeaderFlags) ([]M
 	return unpackMessages(msgs)
 }
 
-//Message is the interface used for passing around different kinds of rtnetlink messages
+// Message is the interface used for passing around different kinds of rtnetlink messages
 type Message interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler

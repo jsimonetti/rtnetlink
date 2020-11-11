@@ -161,11 +161,10 @@ type RouteAttributes struct {
 }
 
 func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.RTA_UNSPEC:
-			//unused attribute
+			// unused attribute
 		case unix.RTA_DST:
 			l := len(ad.Bytes())
 			if l != 4 && l != 16 {

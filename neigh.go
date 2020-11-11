@@ -180,7 +180,6 @@ type NeighAttributes struct {
 }
 
 func (a *NeighAttributes) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.NDA_UNSPEC:

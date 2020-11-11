@@ -230,7 +230,6 @@ const (
 
 // unmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFLA_UNSPEC:
@@ -506,7 +505,6 @@ type LinkInfo struct {
 }
 
 func (i *LinkInfo) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFLA_INFO_KIND:
@@ -545,7 +543,6 @@ type LinkXDP struct {
 }
 
 func (xdp *LinkXDP) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFLA_XDP_FD:
@@ -564,7 +561,6 @@ func (xdp *LinkXDP) decode(ad *netlink.AttributeDecoder) error {
 }
 
 func (xdp *LinkXDP) encode(ae *netlink.AttributeEncoder) error {
-
 	ae.Uint32(unix.IFLA_XDP_FD, xdp.FD)
 	ae.Uint32(unix.IFLA_XDP_EXPECTED_FD, xdp.ExpectedFD)
 	ae.Uint8(unix.IFLA_XDP_ATTACHED, xdp.Attached)

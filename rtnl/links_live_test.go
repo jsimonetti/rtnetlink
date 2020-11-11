@@ -5,17 +5,15 @@ package rtnl
 import (
 	"bytes"
 	"net"
-	"testing"
 	"strconv"
+	"testing"
 )
 
 const (
 	hardwareAddrLen = 6
 )
 
-var (
-	hardwareAddrZero = net.HardwareAddr{0, 0, 0, 0, 0, 0}
-)
+var hardwareAddrZero = net.HardwareAddr{0, 0, 0, 0, 0, 0}
 
 func hardwareAddrEqual(a, b net.HardwareAddr) bool {
 	return bytes.Equal(a, b)
@@ -89,7 +87,7 @@ func TestLiveLinks(t *testing.T) {
 				if ifindex == ieth && hardwareAddrIsUnspecified(ifc.HardwareAddr) {
 					t.Error("zero ifc.HardwareAddr, expected non-zero")
 				}
-				if ifindex == ilo && ifc.Flags&net.FlagLoopback == 0  {
+				if ifindex == ilo && ifc.Flags&net.FlagLoopback == 0 {
 					t.Error("no FlagLoopback in ifc.Flags, expected to be set")
 				}
 			})

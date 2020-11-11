@@ -155,7 +155,6 @@ type AddressAttributes struct {
 }
 
 func (a *AddressAttributes) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFA_UNSPEC:

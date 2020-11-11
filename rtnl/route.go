@@ -20,7 +20,6 @@ type Route struct {
 
 // generating route message
 func genRouteMessage(ifc *net.Interface, dst net.IPNet, gw net.IP, options ...RouteOption) (rm *rtnetlink.RouteMessage, err error) {
-
 	opts := DefaultRouteOptions(ifc, dst, gw)
 
 	for _, option := range options {
