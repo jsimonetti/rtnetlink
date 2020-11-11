@@ -127,18 +127,17 @@ func (a *AddressService) Delete(req *AddressMessage) error {
 
 // List retrieves all addresses.
 func (a *AddressService) List() ([]AddressMessage, error) {
-	req := &AddressMessage{}
+	req := AddressMessage{}
 
 	flags := netlink.Request | netlink.Dump
-	msgs, err := a.c.Execute(req, unix.RTM_GETADDR, flags)
+	msgs, err := a.c.Execute(&req, unix.RTM_GETADDR, flags)
 	if err != nil {
 		return nil, err
 	}
 
-	addresses := make([]AddressMessage, 0, len(msgs))
-	for _, m := range msgs {
-		address := (m).(*AddressMessage)
-		addresses = append(addresses, *address)
+	addresses := make([]AddressMessage, len(msgs))
+	for i := range msgs {
+		addresses[i] = *msgs[i].(*AddressMessage)
 	}
 	return addresses, nil
 }

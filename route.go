@@ -100,73 +100,51 @@ type RouteService struct {
 	c *Conn
 }
 
+func (r *RouteService) execute(m Message, family uint16, flags netlink.HeaderFlags) ([]RouteMessage, error) {
+	msgs, err := r.c.Execute(m, family, flags)
+
+	routes := make([]RouteMessage, len(msgs))
+	for i := range msgs {
+		routes[i] = *msgs[i].(*RouteMessage)
+	}
+
+	return routes, err
+}
+
 // Add new route
 func (r *RouteService) Add(req *RouteMessage) error {
 	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
 	_, err := r.c.Execute(req, unix.RTM_NEWROUTE, flags)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // Replace or add new route
 func (r *RouteService) Replace(req *RouteMessage) error {
 	flags := netlink.Request | netlink.Create | netlink.Replace | netlink.Acknowledge
 	_, err := r.c.Execute(req, unix.RTM_NEWROUTE, flags)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // Delete existing route
 func (r *RouteService) Delete(req *RouteMessage) error {
 	flags := netlink.Request | netlink.Acknowledge
 	_, err := r.c.Execute(req, unix.RTM_DELROUTE, flags)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // Get Route(s)
 func (r *RouteService) Get(req *RouteMessage) ([]RouteMessage, error) {
 	flags := netlink.Request | netlink.DumpFiltered
-	msgs, err := r.c.Execute(req, unix.RTM_GETROUTE, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	routes := make([]RouteMessage, 0, len(msgs))
-	for _, m := range msgs {
-		route := (m).(*RouteMessage)
-		routes = append(routes, *route)
-	}
-
-	return routes, nil
+	return r.execute(req, unix.RTM_GETROUTE, flags)
 }
 
 // List all routes
 func (r *RouteService) List() ([]RouteMessage, error) {
-	req := &RouteMessage{}
-
 	flags := netlink.Request | netlink.Dump
-	msgs, err := r.c.Execute(req, unix.RTM_GETROUTE, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	routes := make([]RouteMessage, 0, len(msgs))
-	for _, m := range msgs {
-		route := (m).(*RouteMessage)
-		routes = append(routes, *route)
-	}
-
-	return routes, nil
+	return r.execute(&RouteMessage{}, unix.RTM_GETROUTE, flags)
 }
 
 type RouteAttributes struct {
