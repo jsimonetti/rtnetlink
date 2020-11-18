@@ -61,6 +61,9 @@ const (
 	IFLA_XDP_FLAGS       = 0x3
 	IFLA_XDP_PROG_ID     = 0x4
 	IFLA_XDP_EXPECTED_FD = 0x8
+	LWTUNNEL_ENCAP_MPLS  = 0x1
+	MPLS_IPTUNNEL_DST    = 0x1
+	MPLS_IPTUNNEL_TTL    = 0x2
 	NDA_UNSPEC           = 0x0
 	NDA_DST              = 0x1
 	NDA_LLADDR           = 0x2
@@ -68,6 +71,8 @@ const (
 	NDA_IFINDEX          = 0x8
 	RTA_UNSPEC           = 0x0
 	RTA_DST              = 0x1
+	RTA_ENCAP            = 0x16
+	RTA_ENCAP_TYPE       = 0x15
 	RTA_PREFSRC          = 0x7
 	RTA_GATEWAY          = 0x5
 	RTA_OIF              = 0x4
