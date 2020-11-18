@@ -65,6 +65,9 @@ const (
 	IFLA_XDP_FLAGS       = linux.IFLA_XDP_FLAGS
 	IFLA_XDP_PROG_ID     = linux.IFLA_XDP_PROG_ID
 	IFLA_XDP_EXPECTED_FD = linux.IFLA_XDP_EXPECTED_FD
+	LWTUNNEL_ENCAP_MPLS  = linux.LWTUNNEL_ENCAP_MPLS
+	MPLS_IPTUNNEL_DST    = linux.MPLS_IPTUNNEL_DST
+	MPLS_IPTUNNEL_TTL    = linux.MPLS_IPTUNNEL_TTL
 	NDA_UNSPEC           = linux.NDA_UNSPEC
 	NDA_DST              = linux.NDA_DST
 	NDA_LLADDR           = linux.NDA_LLADDR
@@ -72,6 +75,8 @@ const (
 	NDA_IFINDEX          = linux.NDA_IFINDEX
 	RTA_UNSPEC           = linux.RTA_UNSPEC
 	RTA_DST              = linux.RTA_DST
+	RTA_ENCAP            = linux.RTA_ENCAP
+	RTA_ENCAP_TYPE       = linux.RTA_ENCAP_TYPE
 	RTA_PREFSRC          = linux.RTA_PREFSRC
 	RTA_GATEWAY          = linux.RTA_GATEWAY
 	RTA_OIF              = linux.RTA_OIF

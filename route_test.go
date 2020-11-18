@@ -204,6 +204,96 @@ func TestRouteMessageMarshalUnmarshalBinary(t *testing.T) {
 	}
 }
 
+func TestRouteMessageMarshalRoundTrip(t *testing.T) {
+	skipBigEndian(t)
+
+	// The above tests begin with unmarshaling raw bytes and are more
+	// comprehensive, but due to the complexity of nested route message
+	// attributes and structures, it has become rather difficult to maintain
+	// over time. These tests will focus on a subset of that functionality to
+	// ensure that marshaling and unmarshaling perform symmetrical operations
+	// given a proper Go type as input, rather than raw bytes.
+
+	tests := []struct {
+		name string
+		m    *RouteMessage
+	}{
+		{
+			name: "multipath MPLS",
+			m: &RouteMessage{
+				Attributes: RouteAttributes{
+					Multipath: []NextHop{
+						{
+							Hop: RTNextHop{
+								Length:  48,
+								IfIndex: 1,
+							},
+							Gateway: net.IPv4(10, 0, 0, 2),
+							MPLS: []MPLSNextHop{{
+								Label:         1,
+								TrafficClass:  1,
+								BottomOfStack: true,
+								TTL:           1,
+							}},
+						},
+						{
+							Hop: RTNextHop{
+								Length:  52,
+								IfIndex: 2,
+							},
+							Gateway: net.IPv4(10, 0, 0, 3),
+							MPLS: []MPLSNextHop{
+								{
+									Label:        1,
+									TrafficClass: 1,
+									TTL:          1,
+								},
+								{
+									Label:         2,
+									TrafficClass:  2,
+									BottomOfStack: true,
+									TTL:           2,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// First do a marshaling and unmarshaling round trip to ensure
+			// the inputs and outputs are identical.
+			b1, err := tt.m.MarshalBinary()
+			if err != nil {
+				t.Fatalf("failed to marshal test message: %v", err)
+			}
+
+			var m RouteMessage
+			if err := m.UnmarshalBinary(b1); err != nil {
+				t.Fatalf("failed to unmarshal: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.m, &m); diff != "" {
+				t.Fatalf("unexpected RouteMessage after round-trip (-want +got):\n%s", diff)
+			}
+
+			// Then compare the results of the first marshaled bytes against
+			// the newly marshaled bytes.
+			b2, err := m.MarshalBinary()
+			if err != nil {
+				t.Fatalf("failed to marshal parsed message: %v", err)
+			}
+
+			if diff := cmp.Diff(b1, b2); diff != "" {
+				t.Fatalf("unexpected final raw byte output (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestRouteMessageUnmarshalBinaryErrors(t *testing.T) {
 	skipBigEndian(t)
 

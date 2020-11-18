@@ -1,6 +1,7 @@
 package rtnetlink
 
 import (
+	"encoding/binary"
 	"errors"
 	"net"
 	"unsafe"
@@ -348,8 +349,9 @@ type RTNextHop struct {
 
 // NextHop wraps struct rtnexthop to provide access to nested attributes
 type NextHop struct {
-	Hop     RTNextHop // a rtnexthop struct
-	Gateway net.IP    // that struct's nested Gateway attribute
+	Hop     RTNextHop     // a rtnexthop struct
+	Gateway net.IP        // that struct's nested Gateway attribute
+	MPLS    []MPLSNextHop // Any MPLS next hops for a route.
 }
 
 func (a *RouteAttributes) encodeMultipath() ([]byte, error) {
@@ -359,9 +361,16 @@ func (a *RouteAttributes) encodeMultipath() ([]byte, error) {
 		// compute the length of each (rtnexthop, attributes) pair.
 		ae := netlink.NewAttributeEncoder()
 
-		if a.Gateway != nil {
+		if nh.Gateway != nil {
 			// TODO(mdlayher): more validation.
 			ae.Bytes(unix.RTA_GATEWAY, nh.Gateway)
+		}
+
+		if len(nh.MPLS) > 0 {
+			// TODO(mdlayher): validation over different encapsulation types,
+			// and ensure that only one can be set.
+			ae.Uint16(unix.RTA_ENCAP_TYPE, unix.LWTUNNEL_ENCAP_MPLS)
+			ae.Nested(unix.RTA_ENCAP, nh.encodeEncap)
 		}
 
 		ab, err := ae.Encode()
@@ -417,16 +426,26 @@ func (a *RouteAttributes) parseMultipath(b []byte) error {
 	return mpp.Err()
 }
 
-// rtnexthop payload is at least one nested attribute RTA_GATEWAY
-// possibly others?
+// decode decodes netlink attribute values into a NextHop.
 func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
 	if ad == nil {
 		// Invalid decoder, do nothing.
 		return nil
 	}
 
+	// If encapsulation is present, we won't know how to deal with it until we
+	// identify the right type and then later parse the nested attribute bytes.
+	var (
+		encapType uint16
+		encapBuf  []byte
+	)
+
 	for ad.Next() {
 		switch ad.Type() {
+		case unix.RTA_ENCAP:
+			encapBuf = ad.Bytes()
+		case unix.RTA_ENCAP_TYPE:
+			encapType = ad.Uint16()
 		case unix.RTA_GATEWAY:
 			l := len(ad.Bytes())
 			if l != 4 && l != 16 {
@@ -434,6 +453,103 @@ func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
 			}
 
 			nh.Gateway = ad.Bytes()
+		}
+	}
+
+	if err := ad.Err(); err != nil {
+		return err
+	}
+
+	if encapType != 0 && encapBuf != nil {
+		// Found encapsulation, start decoding it from the buffer.
+		return nh.decodeEncap(encapType, encapBuf)
+	}
+
+	return nil
+}
+
+// An MPLSNextHop is a route next hop using MPLS encapsulation.
+type MPLSNextHop struct {
+	Label         int
+	TrafficClass  int
+	BottomOfStack bool
+	TTL           uint8
+}
+
+// TODO(mdlayher): MPLSNextHop TTL vs MPLS_IPTUNNEL_TTL. What's the difference?
+
+// encodeEncap encodes netlink attribute values related to encapsulation from
+// a NextHop.
+func (nh *NextHop) encodeEncap(ae *netlink.AttributeEncoder) error {
+	// TODO: this only handles MPLS encapsulation as that is all we support.
+
+	// Allocate enough space for an MPLS label stack.
+	var (
+		i int
+		b = make([]byte, 4*len(nh.MPLS))
+	)
+
+	for _, mnh := range nh.MPLS {
+		// Pack the following:
+		//  - label: 20 bits
+		//  - traffic class: 3 bits
+		//  - bottom-of-stack: 1 bit
+		//  - TTL: 8 bits
+		binary.BigEndian.PutUint32(b[i:i+4], uint32(mnh.Label)<<12)
+
+		b[i+2] |= byte(mnh.TrafficClass) << 1
+
+		if mnh.BottomOfStack {
+			b[i+2] |= 1
+		}
+
+		b[i+3] = mnh.TTL
+
+		// Advance in the buffer to begin storing the next label.
+		i += 4
+	}
+
+	// Finally store the output bytes.
+	ae.Bytes(unix.MPLS_IPTUNNEL_DST, b)
+	return nil
+}
+
+// decodeEncap decodes netlink attribute values related to encapsulation into a
+// NextHop.
+func (nh *NextHop) decodeEncap(typ uint16, b []byte) error {
+	if typ != unix.LWTUNNEL_ENCAP_MPLS {
+		// TODO: handle other encapsulation types as needed.
+		return nil
+	}
+
+	// MPLS labels are stored as big endian bytes.
+	ad, err := netlink.NewAttributeDecoder(b)
+	if err != nil {
+		return err
+	}
+
+	for ad.Next() {
+		switch ad.Type() {
+		case unix.MPLS_IPTUNNEL_DST:
+			// Every 4 bytes stores another MPLS label, so make sure the stored
+			// bytes are divisible by exactly 4.
+			b := ad.Bytes()
+			if len(b)%4 != 0 {
+				return errInvalidRouteMessageAttr
+			}
+
+			for i := 0; i < len(b); i += 4 {
+				n := binary.BigEndian.Uint32(b[i : i+4])
+
+				// For reference, see:
+				// https://en.wikipedia.org/wiki/Multiprotocol_Label_Switching#Operation
+				nh.MPLS = append(nh.MPLS, MPLSNextHop{
+					Label:         int(n) >> 12,
+					TrafficClass:  int(n & 0xe00 >> 9),
+					BottomOfStack: n&0x100 != 0,
+					TTL:           uint8(n & 0xff),
+				})
+			}
 		}
 	}
 
