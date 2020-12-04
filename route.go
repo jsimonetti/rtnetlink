@@ -3,6 +3,7 @@ package rtnetlink
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 	"unsafe"
 
@@ -207,33 +208,15 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 
 func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
 	if a.Dst != nil {
-		if ipv4 := a.Dst.To4(); ipv4 == nil {
-			// Dst Addr is IPv6
-			ae.Bytes(unix.RTA_DST, a.Dst)
-		} else {
-			// Dst Addr is IPv4
-			ae.Bytes(unix.RTA_DST, ipv4)
-		}
+		ae.Do(unix.RTA_DST, encodeIP(a.Dst))
 	}
 
 	if a.Src != nil {
-		if ipv4 := a.Src.To4(); ipv4 == nil {
-			// Src Addr is IPv6
-			ae.Bytes(unix.RTA_PREFSRC, a.Src)
-		} else {
-			// Src Addr is IPv4
-			ae.Bytes(unix.RTA_PREFSRC, ipv4)
-		}
+		ae.Do(unix.RTA_PREFSRC, encodeIP(a.Src))
 	}
 
 	if a.Gateway != nil {
-		if ipv4 := a.Gateway.To4(); ipv4 == nil {
-			// Gateway Addr is IPv6
-			ae.Bytes(unix.RTA_GATEWAY, a.Gateway)
-		} else {
-			// Gateway Addr is IPv4
-			ae.Bytes(unix.RTA_GATEWAY, ipv4)
-		}
+		ae.Do(unix.RTA_GATEWAY, encodeIP(a.Gateway))
 	}
 
 	if a.OutIface != 0 {
@@ -339,8 +322,7 @@ func (a *RouteAttributes) encodeMultipath() ([]byte, error) {
 		ae := netlink.NewAttributeEncoder()
 
 		if nh.Gateway != nil {
-			// TODO(mdlayher): more validation.
-			ae.Bytes(unix.RTA_GATEWAY, nh.Gateway)
+			ae.Do(unix.RTA_GATEWAY, encodeIP(nh.Gateway))
 		}
 
 		if len(nh.MPLS) > 0 {
@@ -637,4 +619,24 @@ func (mpp *multipathParser) AttributeDecoder() *netlink.AttributeDecoder {
 	mpp.i += mpp.alen
 
 	return ad
+}
+
+// encodeIP is a helper for validating and encoding IPv4 and IPv6 addresses as
+// appropriate for the specified netlink attribute type. It should be used
+// with *netlink.AttributeEncoder.Do.
+func encodeIP(ip net.IP) func() ([]byte, error) {
+	return func() ([]byte, error) {
+		// Don't allow nil or non 4/16-byte addresses.
+		if ip == nil || ip.To16() == nil {
+			return nil, fmt.Errorf("rtnetlink: cannot encode invalid IP address: %s", ip)
+		}
+
+		if ip4 := ip.To4(); ip4 != nil {
+			// IPv4 address.
+			return ip4, nil
+		}
+
+		// IPv6 address.
+		return ip, nil
+	}
 }
