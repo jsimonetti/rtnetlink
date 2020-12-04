@@ -13,9 +13,9 @@ import (
 // Route represents a route table entry
 type Route struct {
 	Destination *net.IPNet
-	Gateway   net.IP
-	Interface *net.Interface
-	Metric    uint32
+	Gateway     net.IP
+	Interface   *net.Interface
+	Metric      uint32
 }
 
 // generating route message
@@ -153,11 +153,11 @@ func (c *Conn) RouteGetAll(dst net.IP) (ret []*Route, err error) {
 			return nil, fmt.Errorf("failed to construct CIDR from route destination address and length: %w", err)
 		}
 
-		ret = append(ret,  &Route{
+		ret = append(ret, &Route{
 			Destination: dstNet,
-			Gateway:   rt.Attributes.Gateway,
-			Interface: iface,
-			Metric: rt.Attributes.Priority,
+			Gateway:     rt.Attributes.Gateway,
+			Interface:   iface,
+			Metric:      rt.Attributes.Priority,
 		})
 	}
 
