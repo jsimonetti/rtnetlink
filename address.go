@@ -95,9 +95,6 @@ func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// rtMessage is an empty method to sattisfy the Message interface.
-func (*AddressMessage) rtMessage() {}
-
 // AddressService is used to retrieve rtnetlink family information.
 type AddressService struct {
 	c *Conn

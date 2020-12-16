@@ -93,9 +93,6 @@ func (m *RouteMessage) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// rtMessage is an empty method to sattisfy the Message interface.
-func (*RouteMessage) rtMessage() {}
-
 type RouteService struct {
 	c *Conn
 }

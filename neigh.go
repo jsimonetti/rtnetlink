@@ -99,9 +99,6 @@ func (m *NeighMessage) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// rtMessage is an empty method to sattisfy the Message interface.
-func (*NeighMessage) rtMessage() {}
-
 // NeighService is used to retrieve rtnetlink family information.
 type NeighService struct {
 	c *Conn

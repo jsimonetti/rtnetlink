@@ -139,7 +139,6 @@ func (c *Conn) Execute(m Message, family uint16, flags netlink.HeaderFlags) ([]M
 type Message interface {
 	encoding.BinaryMarshaler
 	encoding.BinaryUnmarshaler
-	rtMessage()
 }
 
 // packMessage packs a rtnetlink Message into a netlink.Message with the

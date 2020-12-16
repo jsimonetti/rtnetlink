@@ -102,9 +102,6 @@ func (m *LinkMessage) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// rtMessage is an empty method to sattisfy the Message interface.
-func (*LinkMessage) rtMessage() {}
-
 // LinkService is used to retrieve rtnetlink family information.
 type LinkService struct {
 	c *Conn
