@@ -110,15 +110,24 @@ type LinkService struct {
 	c *Conn
 }
 
+// execute executes the request and returns the messages as a LinkMessage slice
+func (l *LinkService) execute(m Message, family uint16, flags netlink.HeaderFlags) ([]LinkMessage, error) {
+	msgs, err := l.c.Execute(m, family, flags)
+
+	links := make([]LinkMessage, len(msgs))
+	for i := range msgs {
+		links[i] = *msgs[i].(*LinkMessage)
+	}
+
+	return links, err
+}
+
 // New creates a new interface using the LinkMessage information.
 func (l *LinkService) New(req *LinkMessage) error {
 	flags := netlink.Request | netlink.Create | netlink.Acknowledge | netlink.Excl
-	_, err := l.c.Execute(req, unix.RTM_NEWLINK, flags)
-	if err != nil {
-		return err
-	}
+	_, err := l.execute(req, unix.RTM_NEWLINK, flags)
 
-	return nil
+	return err
 }
 
 // Delete removes an interface by index.
@@ -129,11 +138,8 @@ func (l *LinkService) Delete(index uint32) error {
 
 	flags := netlink.Request | netlink.Acknowledge
 	_, err := l.c.Execute(req, unix.RTM_DELLINK, flags)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 // Get retrieves interface information by index.
@@ -143,17 +149,13 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 	}
 
 	flags := netlink.Request | netlink.DumpFiltered
-	msg, err := l.c.Execute(req, unix.RTM_GETLINK, flags)
-	if err != nil {
-		return LinkMessage{}, err
+	links, err := l.execute(req, unix.RTM_GETLINK, flags)
+
+	if len(links) != 1 {
+		return LinkMessage{}, fmt.Errorf("too many/little matches, expected 1, actual %d", len(links))
 	}
 
-	if len(msg) != 1 {
-		return LinkMessage{}, fmt.Errorf("too many/little matches, expected 1")
-	}
-
-	link := (msg[0]).(*LinkMessage)
-	return *link, nil
+	return links[0], err
 }
 
 // Set sets interface attributes according to the LinkMessage information.
@@ -168,11 +170,8 @@ func (l *LinkService) Get(index uint32) (LinkMessage, error) {
 func (l *LinkService) Set(req *LinkMessage) error {
 	flags := netlink.Request | netlink.Acknowledge
 	_, err := l.c.Execute(req, unix.RTM_NEWLINK, flags)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (l *LinkService) list(kind string) ([]LinkMessage, error) {
@@ -184,18 +183,7 @@ func (l *LinkService) list(kind string) ([]LinkMessage, error) {
 	}
 
 	flags := netlink.Request | netlink.Dump
-	msgs, err := l.c.Execute(req, unix.RTM_GETLINK, flags)
-	if err != nil {
-		return nil, err
-	}
-
-	links := make([]LinkMessage, 0, len(msgs))
-	for _, m := range msgs {
-		link := (m).(*LinkMessage)
-		links = append(links, *link)
-	}
-
-	return links, nil
+	return l.execute(req, unix.RTM_GETLINK, flags)
 }
 
 // ListByKind retrieves all interfaces of a specific kind.
@@ -242,7 +230,6 @@ const (
 
 // unmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFLA_UNSPEC:
@@ -518,7 +505,6 @@ type LinkInfo struct {
 }
 
 func (i *LinkInfo) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFLA_INFO_KIND:
@@ -557,7 +543,6 @@ type LinkXDP struct {
 }
 
 func (xdp *LinkXDP) decode(ad *netlink.AttributeDecoder) error {
-
 	for ad.Next() {
 		switch ad.Type() {
 		case unix.IFLA_XDP_FD:
@@ -576,7 +561,6 @@ func (xdp *LinkXDP) decode(ad *netlink.AttributeDecoder) error {
 }
 
 func (xdp *LinkXDP) encode(ae *netlink.AttributeEncoder) error {
-
 	ae.Uint32(unix.IFLA_XDP_FD, xdp.FD)
 	ae.Uint32(unix.IFLA_XDP_EXPECTED_FD, xdp.ExpectedFD)
 	ae.Uint8(unix.IFLA_XDP_ATTACHED, xdp.Attached)

@@ -495,7 +495,6 @@ func TestLinkStatsUnmarshalBinary(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &LinkStats{}
 			err := (m).unmarshalBinary(tt.b)
-
 			if err != nil {
 				if want, got := fmt.Sprintf("%s", tt.err), fmt.Sprintf("%s", err); want != got {
 					t.Fatalf("unexpected error:\n- want: %v\n-  got: %v", want, got)
@@ -652,7 +651,6 @@ func TestLinkStats64UnmarshalBinary(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &LinkStats64{}
 			err := (m).unmarshalBinary(tt.b)
-
 			if err != nil {
 				if want, got := fmt.Sprintf("%s", tt.err), fmt.Sprintf("%s", err); want != got {
 					t.Fatalf("unexpected error:\n- want: %v\n-  got: %v", want, got)

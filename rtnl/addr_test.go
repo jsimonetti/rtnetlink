@@ -6,7 +6,6 @@ import (
 )
 
 func TestParseAddrs(t *testing.T) {
-
 	tests := []struct {
 		name  string
 		ipstr string
@@ -44,7 +43,6 @@ func TestParseAddrs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			res, err := ParseAddr(tt.ipstr)
-
 			if err != nil {
 				if want, got := tt.err, err.Error(); want != got {
 					t.Fatalf("unexpected error:\n- want: %v\n-  got: %v", want, got)
