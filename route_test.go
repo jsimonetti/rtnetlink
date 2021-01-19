@@ -219,13 +219,13 @@ func TestRouteMessageMarshalRoundTrip(t *testing.T) {
 		m    *RouteMessage
 	}{
 		{
-			name: "multipath MPLS",
+			name: "multipath IPv4 MPLS",
 			m: &RouteMessage{
 				Attributes: RouteAttributes{
 					Multipath: []NextHop{
 						{
 							Hop: RTNextHop{
-								Length:  48,
+								Length:  36,
 								IfIndex: 1,
 							},
 							Gateway: net.IPv4(10, 0, 0, 2),
@@ -238,10 +238,52 @@ func TestRouteMessageMarshalRoundTrip(t *testing.T) {
 						},
 						{
 							Hop: RTNextHop{
-								Length:  52,
+								Length:  40,
 								IfIndex: 2,
 							},
 							Gateway: net.IPv4(10, 0, 0, 3),
+							MPLS: []MPLSNextHop{
+								{
+									Label:        1,
+									TrafficClass: 1,
+									TTL:          1,
+								},
+								{
+									Label:         2,
+									TrafficClass:  2,
+									BottomOfStack: true,
+									TTL:           2,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "multipath IPv6 MPLS",
+			m: &RouteMessage{
+				Attributes: RouteAttributes{
+					Multipath: []NextHop{
+						{
+							Hop: RTNextHop{
+								Length:  48,
+								IfIndex: 1,
+							},
+							Gateway: net.ParseIP("2001:db8::1"),
+							MPLS: []MPLSNextHop{{
+								Label:         1,
+								TrafficClass:  1,
+								BottomOfStack: true,
+								TTL:           1,
+							}},
+						},
+						{
+							Hop: RTNextHop{
+								Length:  52,
+								IfIndex: 2,
+							},
+							Gateway: net.ParseIP("2001:db8::2"),
 							MPLS: []MPLSNextHop{
 								{
 									Label:        1,
