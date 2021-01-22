@@ -89,6 +89,7 @@ const (
 	RTAX_ADVMSS          = linux.RTAX_ADVMSS
 	RTAX_FEATURES        = linux.RTAX_FEATURES
 	RTAX_INITCWND        = linux.RTAX_INITCWND
+	RTAX_INITRWND        = linux.RTAX_INITRWND
 	RTAX_MTU             = linux.RTAX_MTU
 	NTF_PROXY            = linux.NTF_PROXY
 	RTN_UNICAST          = linux.RTN_UNICAST
