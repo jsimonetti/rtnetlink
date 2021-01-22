@@ -85,6 +85,7 @@ const (
 	RTAX_ADVMSS          = 0x8
 	RTAX_FEATURES        = 0xc
 	RTAX_INITCWND        = 0xb
+	RTAX_INITRWND        = 0xe
 	RTAX_MTU             = 0x2
 	NTF_PROXY            = 0x8
 	RTN_UNICAST          = 0x1

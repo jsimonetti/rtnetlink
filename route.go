@@ -255,6 +255,7 @@ type RouteMetrics struct {
 	AdvMSS   uint32
 	Features uint32
 	InitCwnd uint32
+	InitRwnd uint32
 	MTU      uint32
 }
 
@@ -267,6 +268,8 @@ func (rm *RouteMetrics) decode(ad *netlink.AttributeDecoder) error {
 			rm.Features = ad.Uint32()
 		case unix.RTAX_INITCWND:
 			rm.InitCwnd = ad.Uint32()
+		case unix.RTAX_INITRWND:
+			rm.InitRwnd = ad.Uint32()
 		case unix.RTAX_MTU:
 			rm.MTU = ad.Uint32()
 		}
@@ -287,6 +290,10 @@ func (rm *RouteMetrics) encode(ae *netlink.AttributeEncoder) error {
 
 	if rm.InitCwnd != 0 {
 		ae.Uint32(unix.RTAX_INITCWND, rm.InitCwnd)
+	}
+
+	if rm.InitRwnd != 0 {
+		ae.Uint32(unix.RTAX_INITRWND, rm.InitRwnd)
 	}
 
 	if rm.MTU != 0 {
