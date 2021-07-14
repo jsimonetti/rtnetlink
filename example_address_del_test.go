@@ -45,7 +45,7 @@ func Example_deleteAddress() {
 		Family:       uint8(family),
 		PrefixLength: uint8(ones),
 		Index:        uint32(iface.Index),
-		Attributes: rtnetlink.AddressAttributes{
+		Attributes: &rtnetlink.AddressAttributes{
 			Address:   addr,
 			Broadcast: brd,
 		},

@@ -25,9 +25,6 @@ func TestAddressMessageMarshalBinary(t *testing.T) {
 			m:    &AddressMessage{},
 			b: []byte{
 				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x04, 0x00, 0x01, 0x00, 0x08, 0x00, 0x08, 0x00,
-				0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
@@ -41,15 +38,12 @@ func TestAddressMessageMarshalBinary(t *testing.T) {
 			},
 			b: []byte{
 				0x02, 0x08, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-				0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				0x04, 0x00, 0x01, 0x00, 0x08, 0x00, 0x08, 0x00,
-				0x00, 0x00, 0x00, 0x00,
 			},
 		},
 		{
 			name: "attributes",
 			m: &AddressMessage{
-				Attributes: AddressAttributes{
+				Attributes: &AddressAttributes{
 					Address:   []byte{0, 0, 0, 0, 0, 0},
 					Broadcast: []byte{0, 0, 0, 0, 0, 0},
 					Label:     "lo",
@@ -65,9 +59,9 @@ func TestAddressMessageMarshalBinary(t *testing.T) {
 			},
 		},
 		{
-			name: "no broadcast ",
+			name: "no broadcast",
 			m: &AddressMessage{
-				Attributes: AddressAttributes{
+				Attributes: &AddressAttributes{
 					Address: []byte{0, 0, 0, 0, 0, 0},
 					Label:   "lo",
 				},
@@ -150,7 +144,7 @@ func TestAddressMessageUnmarshalBinary(t *testing.T) {
 				Flags:        0xfe,
 				Scope:        1,
 				Index:        1,
-				Attributes: AddressAttributes{
+				Attributes: &AddressAttributes{
 					Address:   net.IP{0x7f, 0x0, 0x0, 0x1},
 					Local:     net.IP{0x7f, 0x0, 0x0, 0x1},
 					Label:     "lo",

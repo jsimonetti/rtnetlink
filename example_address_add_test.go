@@ -48,7 +48,7 @@ func Example_addAddress() {
 		PrefixLength: uint8(ones),
 		Scope:        unix.RT_SCOPE_UNIVERSE,
 		Index:        uint32(iface.Index),
-		Attributes: rtnetlink.AddressAttributes{
+		Attributes: &rtnetlink.AddressAttributes{
 			Address:   addr,
 			Local:     addr,
 			Broadcast: brd,

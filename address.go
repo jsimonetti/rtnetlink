@@ -37,8 +37,8 @@ type AddressMessage struct {
 	// Interface index
 	Index uint32
 
-	// Attributes List
-	Attributes AddressAttributes
+	// Optional attributes which are appended when not nil.
+	Attributes *AddressAttributes
 }
 
 // MarshalBinary marshals a AddressMessage into a byte slice.
@@ -51,8 +51,12 @@ func (m *AddressMessage) MarshalBinary() ([]byte, error) {
 	b[3] = m.Scope
 	nativeEndian.PutUint32(b[4:8], m.Index)
 
+	if m.Attributes == nil {
+		// No attributes to encode.
+		return b, nil
+	}
+
 	ae := netlink.NewAttributeEncoder()
-	ae.ByteOrder = nativeEndian
 	err := m.Attributes.encode(ae)
 	if err != nil {
 		return nil, err
@@ -80,16 +84,16 @@ func (m *AddressMessage) UnmarshalBinary(b []byte) error {
 	m.Index = nativeEndian.Uint32(b[4:8])
 
 	if l > unix.SizeofIfAddrmsg {
-		m.Attributes = AddressAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[unix.SizeofIfAddrmsg:])
 		if err != nil {
 			return err
 		}
-		ad.ByteOrder = nativeEndian
-		err = m.Attributes.decode(ad)
-		if err != nil {
+
+		var aa AddressAttributes
+		if err := aa.decode(ad); err != nil {
 			return err
 		}
+		m.Attributes = &aa
 	}
 
 	return nil
