@@ -26,7 +26,7 @@ func (c *Conn) AddrAdd(ifc *net.Interface, addr *net.IPNet) error {
 		PrefixLength: uint8(prefixlen),
 		Scope:        uint8(scope),
 		Index:        uint32(ifc.Index),
-		Attributes: rtnetlink.AddressAttributes{
+		Attributes: &rtnetlink.AddressAttributes{
 			Address: addr.IP,
 			Local:   addr.IP,
 		},
@@ -61,7 +61,7 @@ func (c *Conn) AddrDel(ifc *net.Interface, addr *net.IPNet) error {
 				Family:       uint8(af),
 				PrefixLength: uint8(prefixlen),
 				Index:        uint32(ifc.Index),
-				Attributes: rtnetlink.AddressAttributes{
+				Attributes: &rtnetlink.AddressAttributes{
 					Address: addr.IP,
 				},
 			}
