@@ -27,6 +27,7 @@ type conn interface {
 	Send(m netlink.Message) (netlink.Message, error)
 	Receive() ([]netlink.Message, error)
 	Execute(m netlink.Message) ([]netlink.Message, error)
+	SetOption(option netlink.ConnOption, enable bool) error
 	SetReadDeadline(t time.Time) error
 }
 
@@ -60,6 +61,11 @@ func newConn(c conn) *Conn {
 // Close closes the connection.
 func (c *Conn) Close() error {
 	return c.c.Close()
+}
+
+// SetOption enables or disables a netlink socket option for the Conn.
+func (c *Conn) SetOption(option netlink.ConnOption, enable bool) error {
+	return c.c.SetOption(option, enable)
 }
 
 // SetReadDeadline sets the read deadline associated with the connection.
