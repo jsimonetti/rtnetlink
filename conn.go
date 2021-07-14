@@ -63,9 +63,6 @@ func (c *Conn) Close() error {
 }
 
 // SetReadDeadline sets the read deadline associated with the connection.
-//
-// Deadline functionality is only supported on Go 1.12+. Calling this function
-// on older versions of Go will result in an error.
 func (c *Conn) SetReadDeadline(t time.Time) error {
 	return c.c.SetReadDeadline(t)
 }
