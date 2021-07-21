@@ -80,15 +80,21 @@ func (m *RouteMessage) UnmarshalBinary(b []byte) error {
 	m.Flags = nativeEndian.Uint32(b[8:12])
 
 	if l > unix.SizeofRtMsg {
-		m.Attributes = RouteAttributes{}
 		ad, err := netlink.NewAttributeDecoder(b[unix.SizeofRtMsg:])
 		if err != nil {
 			return err
 		}
-		err = m.Attributes.decode(ad)
-		if err != nil {
+
+		var ra RouteAttributes
+		if err := ra.decode(ad); err != nil {
 			return err
 		}
+
+		// Must consume errors from decoder before returning.
+		if err := ad.Err(); err != nil {
+			return fmt.Errorf("invalid route message attributes: %v", err)
+		}
+		m.Attributes = ra
 	}
 
 	return nil
@@ -167,23 +173,11 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.RTA_UNSPEC:
 			// unused attribute
 		case unix.RTA_DST:
-			l := len(ad.Bytes())
-			if l != 4 && l != 16 {
-				return errInvalidRouteMessageAttr
-			}
-			a.Dst = ad.Bytes()
+			ad.Do(decodeIP(&a.Dst))
 		case unix.RTA_PREFSRC:
-			l := len(ad.Bytes())
-			if l != 4 && l != 16 {
-				return errInvalidRouteMessageAttr
-			}
-			a.Src = ad.Bytes()
+			ad.Do(decodeIP(&a.Src))
 		case unix.RTA_GATEWAY:
-			l := len(ad.Bytes())
-			if l != 4 && l != 16 {
-				return errInvalidRouteMessageAttr
-			}
-			a.Gateway = ad.Bytes()
+			ad.Do(decodeIP(&a.Gateway))
 		case unix.RTA_OIF:
 			a.OutIface = ad.Uint32()
 		case unix.RTA_PRIORITY:
@@ -203,7 +197,7 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 		}
 	}
 
-	return ad.Err()
+	return nil
 }
 
 func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
@@ -413,12 +407,7 @@ func (nh *NextHop) decode(ad *netlink.AttributeDecoder) error {
 		case unix.RTA_ENCAP_TYPE:
 			encapType = ad.Uint16()
 		case unix.RTA_GATEWAY:
-			l := len(ad.Bytes())
-			if l != 4 && l != 16 {
-				return errInvalidRouteMessageAttr
-			}
-
-			nh.Gateway = ad.Bytes()
+			ad.Do(decodeIP(&nh.Gateway))
 		}
 	}
 
@@ -626,24 +615,4 @@ func (mpp *multipathParser) AttributeDecoder() *netlink.AttributeDecoder {
 	mpp.i += mpp.alen
 
 	return ad
-}
-
-// encodeIP is a helper for validating and encoding IPv4 and IPv6 addresses as
-// appropriate for the specified netlink attribute type. It should be used
-// with *netlink.AttributeEncoder.Do.
-func encodeIP(ip net.IP) func() ([]byte, error) {
-	return func() ([]byte, error) {
-		// Don't allow nil or non 4/16-byte addresses.
-		if ip == nil || ip.To16() == nil {
-			return nil, fmt.Errorf("rtnetlink: cannot encode invalid IP address: %s", ip)
-		}
-
-		if ip4 := ip.To4(); ip4 != nil {
-			// IPv4 address.
-			return ip4, nil
-		}
-
-		// IPv6 address.
-		return ip, nil
-	}
 }
