@@ -347,16 +347,13 @@ func TestRouteMessageUnmarshalBinaryErrors(t *testing.T) {
 		name string
 		b    []byte
 		m    Message
-		err  error
 	}{
 		{
 			name: "empty",
-			err:  errInvalidRouteMessage,
 		},
 		{
 			name: "short",
 			b:    make([]byte, 3),
-			err:  errInvalidRouteMessage,
 		},
 		{
 			name: "invalid attr",
@@ -370,7 +367,6 @@ func TestRouteMessageUnmarshalBinaryErrors(t *testing.T) {
 				0x08, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00,
 				0x05, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00,
 			},
-			err: errInvalidRouteMessageAttr,
 		},
 	}
 
@@ -378,10 +374,11 @@ func TestRouteMessageUnmarshalBinaryErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var m RouteMessage
 			err := m.UnmarshalBinary(tt.b)
-
-			if diff := cmp.Diff(tt.err, err, cmp.Comparer(compareErrors)); diff != "" {
-				t.Fatalf("unexpected error (-want +got):\n%s", diff)
+			if err == nil {
+				t.Fatal("expected an error, but none occurred")
 			}
+
+			t.Logf("err: %v", err)
 		})
 	}
 }
@@ -423,10 +420,4 @@ func TestRouteMessageFuzz(t *testing.T) {
 			}
 		})
 	}
-}
-
-func compareErrors(x, y error) bool {
-	// This is lazy but should be sufficient for the typical stringified errors
-	// returned by this package.
-	return x.Error() == y.Error()
 }
