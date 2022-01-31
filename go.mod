@@ -1,6 +1,6 @@
 module github.com/jsimonetti/rtnetlink
 
-go 1.12
+go 1.13
 
 require (
 	github.com/cilium/ebpf v0.8.0
