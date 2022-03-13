@@ -13,7 +13,11 @@ import (
 func TestRouteMessageMarshalUnmarshalBinary(t *testing.T) {
 	skipBigEndian(t)
 
-	timeout := uint32(255)
+	var (
+		timeout = uint32(255)
+		pref    = uint8(1)
+	)
+
 	tests := []struct {
 		name string
 		m    *RouteMessage
@@ -56,6 +60,7 @@ func TestRouteMessageMarshalUnmarshalBinary(t *testing.T) {
 					Priority: 1,
 					Table:    2,
 					Mark:     3,
+					Pref:     &pref,
 					Expires:  &timeout,
 					Metrics: &RouteMetrics{
 						AdvMSS:   1,
@@ -127,6 +132,9 @@ func TestRouteMessageMarshalUnmarshalBinary(t *testing.T) {
 				// Mark
 				0x08, 0x00, 0x10, 0x00,
 				0x03, 0x00, 0x00, 0x00,
+				// Pref
+				0x05, 0x00, 0x14, 0x00,
+				0x01, 0x00, 0x00, 0x00,
 				// Expires
 				0x08, 0x00, 0x17, 0x00,
 				0xff, 0x00, 0x00, 0x00,

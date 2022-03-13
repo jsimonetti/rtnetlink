@@ -90,6 +90,7 @@ const (
 	RTA_EXPIRES                 = 0x17
 	RTA_METRICS                 = 0x8
 	RTA_MULTIPATH               = 0x9
+	RTA_PREF                    = 0x14
 	RTAX_ADVMSS                 = 0x8
 	RTAX_FEATURES               = 0xc
 	RTAX_INITCWND               = 0xb
