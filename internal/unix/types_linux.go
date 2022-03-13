@@ -94,6 +94,7 @@ const (
 	RTA_EXPIRES                 = linux.RTA_EXPIRES
 	RTA_METRICS                 = linux.RTA_METRICS
 	RTA_MULTIPATH               = linux.RTA_MULTIPATH
+	RTA_PREF                    = linux.RTA_PREF
 	RTAX_ADVMSS                 = linux.RTAX_ADVMSS
 	RTAX_FEATURES               = linux.RTAX_FEATURES
 	RTAX_INITCWND               = linux.RTAX_INITCWND

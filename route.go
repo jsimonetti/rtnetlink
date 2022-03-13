@@ -162,6 +162,7 @@ type RouteAttributes struct {
 	Priority  uint32
 	Table     uint32
 	Mark      uint32
+	Pref      *uint8
 	Expires   *uint32
 	Metrics   *RouteMetrics
 	Multipath []NextHop
@@ -194,6 +195,9 @@ func (a *RouteAttributes) decode(ad *netlink.AttributeDecoder) error {
 			ad.Nested(a.Metrics.decode)
 		case unix.RTA_MULTIPATH:
 			ad.Do(a.parseMultipath)
+		case unix.RTA_PREF:
+			pref := ad.Uint8()
+			a.Pref = &pref
 		}
 	}
 
@@ -227,6 +231,10 @@ func (a *RouteAttributes) encode(ae *netlink.AttributeEncoder) error {
 
 	if a.Mark != 0 {
 		ae.Uint32(unix.RTA_MARK, a.Mark)
+	}
+
+	if a.Pref != nil {
+		ae.Uint8(unix.RTA_PREF, *a.Pref)
 	}
 
 	if a.Expires != nil {
