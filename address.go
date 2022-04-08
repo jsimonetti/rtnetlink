@@ -202,6 +202,9 @@ func (a *AddressAttributes) encode(ae *netlink.AttributeEncoder) error {
 	if a.Multicast != nil {
 		ae.Do(unix.IFA_MULTICAST, encodeIP(a.Multicast))
 	}
+	if a.Label != "" {
+		ae.String(unix.IFA_LABEL, a.Label)
+	}
 	ae.Uint32(unix.IFA_FLAGS, a.Flags)
 
 	return nil
