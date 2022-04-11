@@ -58,3 +58,17 @@ func FuzzNeighMessage(data []byte) int {
 
 	return 1
 }
+
+// FuzzRuleMessage will fuzz a RuleMessage
+func FuzzRuleMessage(data []byte) int {
+	m := &RuleMessage{}
+	if err := (m).UnmarshalBinary(data); err != nil {
+		return 0
+	}
+
+	if _, err := m.MarshalBinary(); err != nil {
+		panic(err)
+	}
+
+	return 1
+}
