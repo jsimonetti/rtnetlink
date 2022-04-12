@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("cviINder\x04\x00roviP\x1c\x04\x00ro\x04\x00dr\x04\x00rviINe")

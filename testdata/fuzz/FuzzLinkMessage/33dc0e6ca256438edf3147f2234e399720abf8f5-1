@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("consider proviP\x1c\x01\x00ding a")

@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("\x04\x00@\x00\x00\x00\x03\x80\u007f\x00\x04\x80der using a custom Comparer; if you control the implementation of type, you can also consider using an Exporter, AllowUnexp")
