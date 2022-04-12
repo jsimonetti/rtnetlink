@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("i\xefetsockoptuLOCA\x05\x00\x10\x00LOCA\x05\x00\x10\x00A")

@@ -21,16 +21,16 @@ func FuzzAddressMessage(f *testing.F) {
 	})
 }
 
-// FuzzRouteMessage will fuzz a RouteMessage
-func FuzzRouteMessage(f *testing.F) {
+// FuzzNeighMessage will fuzz a NeighMessage
+func FuzzNeighMessage(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		m := &LinkMessage{}
 		_ = m.UnmarshalBinary(data)
 	})
 }
 
-// FuzzNeighMessage will fuzz a NeighMessage
-func FuzzNeighMessage(f *testing.F) {
+// FuzzRouteMessage will fuzz a RouteMessage
+func FuzzRouteMessage(f *testing.F) {
 	f.Fuzz(func(t *testing.T, data []byte) {
 		m := &LinkMessage{}
 		_ = m.UnmarshalBinary(data)
