@@ -37,7 +37,7 @@ func Example_setLinkUp() {
 
 	// Set the interface operationally UP
 	err = conn.Link.Set(&rtnetlink.LinkMessage{
-		Family: msg.Family,
+		Family: unix.AF_UNSPEC,
 		Type:   msg.Type,
 		Index:  uint32(iface.Index),
 		Flags:  unix.IFF_UP,

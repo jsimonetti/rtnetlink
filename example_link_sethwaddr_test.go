@@ -29,7 +29,7 @@ func Example_setLinkHWAddr() {
 
 	// Set the hw address of the interfaces
 	err = conn.Link.Set(&rtnetlink.LinkMessage{
-		Family: msg.Family,
+		Family: 0x0,
 		Type:   msg.Type,
 		Index:  uint32(iface.Index),
 		Flags:  msg.Flags,
