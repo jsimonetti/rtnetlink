@@ -33,7 +33,7 @@ func Example_setLinkDown() {
 
 	// Set the interface operationally Down
 	err = conn.Link.Set(&rtnetlink.LinkMessage{
-		Family: msg.Family,
+		Family: 0x0,
 		Type:   msg.Type,
 		Index:  uint32(iface.Index),
 		Flags:  0x0,
