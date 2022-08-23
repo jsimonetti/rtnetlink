@@ -413,7 +413,7 @@ func (a *LinkStats) unmarshalBinary(b []byte) error {
 	a.RXCompressed = nativeEndian.Uint32(b[84:88])
 	a.TXCompressed = nativeEndian.Uint32(b[88:92])
 
-	if l == 96 {
+	if l == 96 { // kernel 4.6+
 		a.RXNoHandler = nativeEndian.Uint32(b[92:96])
 	}
 
@@ -453,13 +453,15 @@ type LinkStats64 struct {
 	TXCompressed uint64
 
 	RXNoHandler uint64 // dropped, no handler found
+
+	RXOtherhostDropped uint64 // Number of packets dropped due to mismatch in destination MAC address.
 }
 
 // unmarshalBinary unmarshals the contents of a byte slice into a LinkMessage.
 func (a *LinkStats64) unmarshalBinary(b []byte) error {
 	l := len(b)
-	if l != 184 && l != 192 {
-		return fmt.Errorf("incorrect size, want: 184 or 192")
+	if l != 184 && l != 192 && l != 200 {
+		return fmt.Errorf("incorrect size, want: 184 or 192 or 200")
 	}
 
 	a.RXPackets = nativeEndian.Uint64(b[0:8])
@@ -489,8 +491,12 @@ func (a *LinkStats64) unmarshalBinary(b []byte) error {
 	a.RXCompressed = nativeEndian.Uint64(b[168:176])
 	a.TXCompressed = nativeEndian.Uint64(b[176:184])
 
-	if l == 192 {
+	if l > 191 { // kernel 4.6+
 		a.RXNoHandler = nativeEndian.Uint64(b[184:192])
+	}
+
+	if l > 199 { // kernel 5.19+
+		a.RXOtherhostDropped = nativeEndian.Uint64(b[192:200])
 	}
 
 	return nil
