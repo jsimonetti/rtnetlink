@@ -383,7 +383,7 @@ type LinkStats struct {
 func (a *LinkStats) unmarshalBinary(b []byte) error {
 	l := len(b)
 	if l != 92 && l != 96 {
-		return fmt.Errorf("incorrect size, want: 92 or 96")
+		return fmt.Errorf("incorrect LinkMessage size, want: 92 or 96, got: %d", len(b))
 	}
 
 	a.RXPackets = nativeEndian.Uint32(b[0:4])

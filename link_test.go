@@ -387,22 +387,22 @@ func TestLinkStatsUnmarshalBinary(t *testing.T) {
 	}{
 		{
 			name: "empty",
-			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+			err:  fmt.Errorf("incorrect LinkMessage size, want: 92 or 96, got: 0"),
 		},
 		{
 			name: "invalid < 92",
 			b:    make([]byte, 91),
-			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+			err:  fmt.Errorf("incorrect LinkMessage size, want: 92 or 96, got: 91"),
 		},
 		{
 			name: "invalid > 96",
 			b:    make([]byte, 97),
-			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+			err:  fmt.Errorf("incorrect LinkMessage size, want: 92 or 96, got: 97"),
 		},
 		{
 			name: "invalid > 92 < 96",
 			b:    make([]byte, 93),
-			err:  fmt.Errorf("incorrect size, want: 92 or 96"),
+			err:  fmt.Errorf("incorrect LinkMessage size, want: 92 or 96, got: 93"),
 		},
 		{
 			name: "kernel <4.6",
