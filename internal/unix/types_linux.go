@@ -59,6 +59,7 @@ const (
 	IFLA_LINKINFO               = linux.IFLA_LINKINFO
 	IFLA_LINKMODE               = linux.IFLA_LINKMODE
 	IFLA_IFALIAS                = linux.IFLA_IFALIAS
+	IFLA_ALT_IFNAME             = linux.IFLA_ALT_IFNAME
 	IFLA_MASTER                 = linux.IFLA_MASTER
 	IFLA_CARRIER                = linux.IFLA_CARRIER
 	IFLA_CARRIER_CHANGES        = linux.IFLA_CARRIER_CHANGES

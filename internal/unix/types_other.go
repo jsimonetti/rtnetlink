@@ -55,6 +55,7 @@ const (
 	IFLA_LINKINFO               = 0x12
 	IFLA_LINKMODE               = 0x11
 	IFLA_IFALIAS                = 0x14
+	IFLA_ALT_IFNAME             = 0x35
 	IFLA_MASTER                 = 0xa
 	IFLA_CARRIER                = 0x21
 	IFLA_CARRIER_CHANGES        = 0x23

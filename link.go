@@ -200,6 +200,7 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 type LinkAttributes struct {
 	Address          net.HardwareAddr // Interface L2 address
 	Alias            *string          // Interface alias name
+	AltIfName        *string          // Interface alternative name
 	Broadcast        net.HardwareAddr // L2 broadcast address
 	Carrier          *uint8           // Current physical link state of the interface.
 	CarrierChanges   *uint32          // Number of times the link has seen a change from UP to DOWN and vice versa
@@ -255,6 +256,9 @@ func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.IFLA_IFALIAS:
 			v := ad.String()
 			a.Alias = &v
+		case unix.IFLA_ALT_IFNAME:
+			v := ad.String()
+			a.AltIfName = &v
 		case unix.IFLA_BROADCAST:
 			l := len(ad.Bytes())
 			if l < 4 || l > 32 {
@@ -349,6 +353,10 @@ func (a *LinkAttributes) encode(ae *netlink.AttributeEncoder) error {
 
 	if a.OperationalState != OperStateUnknown {
 		ae.Uint8(unix.IFLA_OPERSTATE, uint8(a.OperationalState))
+	}
+
+	if a.AltIfName != nil {
+		ae.String(unix.IFLA_ALT_IFNAME, *a.AltIfName)
 	}
 
 	if a.Info != nil {
