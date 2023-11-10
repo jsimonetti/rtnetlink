@@ -3,10 +3,10 @@ module github.com/jsimonetti/rtnetlink
 go 1.18
 
 require (
-	github.com/cilium/ebpf v0.12.2
+	github.com/cilium/ebpf v0.12.3
 	github.com/google/go-cmp v0.6.0
 	github.com/mdlayher/netlink v1.7.2
-	golang.org/x/sys v0.13.0
+	golang.org/x/sys v0.14.1-0.20231108175955-e4099bfacb8c
 )
 
 require (
