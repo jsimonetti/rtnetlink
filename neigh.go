@@ -45,8 +45,8 @@ type NeighMessage struct {
 func (m *NeighMessage) MarshalBinary() ([]byte, error) {
 	b := make([]byte, unix.SizeofNdMsg)
 
-	nativeEndian.PutUint16(b[0:2], m.Family)
-	// bytes 3 and 4 are padding
+	b[0] = uint8(m.Family)
+	// bytes 2-4 are padding
 	nativeEndian.PutUint32(b[4:8], m.Index)
 	nativeEndian.PutUint16(b[8:10], m.State)
 	b[10] = m.Flags
@@ -77,7 +77,7 @@ func (m *NeighMessage) UnmarshalBinary(b []byte) error {
 		return errInvalidNeighMessage
 	}
 
-	m.Family = nativeEndian.Uint16(b[0:2])
+	m.Family = uint16(b[0])
 	m.Index = nativeEndian.Uint32(b[4:8])
 	m.State = nativeEndian.Uint16(b[8:10])
 	m.Flags = b[10]
