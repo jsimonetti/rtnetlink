@@ -10,13 +10,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Install Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
       with:
         go-version: ${{ matrix.go-version }}
       id: go
 
     - name: Checkout code
-      uses: actions/checkout@v4.1.1
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
     - name: Download dependencies
       run: go mod download
@@ -38,13 +38,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Install Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
       with:
         go-version: ${{ matrix.go-version }}
       id: go
 
     - name: Checkout code
-      uses: actions/checkout@v4.1.1
+      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
 
     - name: Download dependencies
       run: go mod download
@@ -57,3 +57,18 @@ jobs:
 
     - name: Test Integration
       run: sudo -E env PATH=$PATH go test -v -tags=integration ./...
+  govuln_check:
+    name: Check for vulnerabilities
+    strategy:
+      matrix:
+        go-version: [1.20.x, 1.21.x]
+        platform: [ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+    - name: Check for vulnerabilities
+      id: govulncheck
+      uses: golang/govulncheck-action@7da72f730e37eeaad891fcff0a532d27ed737cd4
+      with:
+        cache: false
+        go-version-input: ${{ matrix.go-version }}
+        go-package: ./...
