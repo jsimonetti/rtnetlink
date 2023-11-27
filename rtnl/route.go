@@ -64,7 +64,7 @@ func genRouteMessage(ifc *net.Interface, dst net.IPNet, gw net.IP, options ...Ro
 	return tx, nil
 }
 
-// RouteAdd adds infomation about a network route.
+// RouteAdd adds information about a network route.
 func (c *Conn) RouteAdd(ifc *net.Interface, dst net.IPNet, gw net.IP, options ...RouteOption) (err error) {
 	rm, err := genRouteMessage(ifc, dst, gw, options...)
 	if err != nil {
