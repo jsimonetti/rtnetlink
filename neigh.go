@@ -194,6 +194,10 @@ func (a *NeighAttributes) decode(ad *netlink.AttributeDecoder) error {
 			// Allow IEEE 802 MAC-48, EUI-48, EUI-64, or 20-octet
 			// IP over InfiniBand link-layer addresses
 			l := len(ad.Bytes())
+			if l == 0 {
+				// Ignore empty addresses.
+				continue
+			}
 			if l != 6 && l != 8 && l != 20 {
 				return errInvalidNeighMessageAttr
 			}

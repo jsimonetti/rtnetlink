@@ -3,9 +3,9 @@ package rtnetlink
 import (
 	"bytes"
 	"net"
-	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jsimonetti/rtnetlink/internal/unix"
 )
 
@@ -130,6 +130,7 @@ func TestNeighMessageUnmarshalBinary(t *testing.T) {
 		name string
 		b    []byte
 		m    Message
+		a    NeighAttributes
 		err  error
 	}{
 		{
@@ -167,6 +168,27 @@ func TestNeighMessageUnmarshalBinary(t *testing.T) {
 				Type:  unix.NTF_PROXY,
 			},
 		},
+		{
+			name: "Empty LLAddr",
+			b: []byte{
+				0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00,
+				0x40, 0x00, 0x00, 0x08, 0x06, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x01, 0x00,
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				0x00, 0x00, 0xff, 0xff, 0x0a, 0x00, 0x00, 0x01,
+				0x04, 0x00, 0x02, 0x00, 0x08, 0x00, 0x08, 0x00,
+				0x00, 0x00, 0x00, 0x00,
+			},
+			m: &NeighMessage{
+				Index: 2,
+				State: 64,
+				Type:  unix.NTF_PROXY,
+				Attributes: &NeighAttributes{
+					Address:   net.ParseIP("10.0.0.1"),
+					LLAddress: nil,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -181,8 +203,8 @@ func TestNeighMessageUnmarshalBinary(t *testing.T) {
 				return
 			}
 
-			if want, got := tt.m, m; !reflect.DeepEqual(want, got) {
-				t.Fatalf("unexpected Message:\n- want: %#v\n-  got: %#v", want, got)
+			if diff := cmp.Diff(tt.m, m); diff != "" {
+				t.Fatalf("unexpected Message: %s\n(-want +got):\n%s", tt.name, diff)
 			}
 		})
 	}
