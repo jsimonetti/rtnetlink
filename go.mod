@@ -6,7 +6,7 @@ require (
 	github.com/cilium/ebpf v0.12.3
 	github.com/google/go-cmp v0.6.0
 	github.com/mdlayher/netlink v1.7.2
-	golang.org/x/sys v0.14.1-0.20231108175955-e4099bfacb8c
+	golang.org/x/sys v0.15.0
 )
 
 require (
