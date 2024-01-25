@@ -182,10 +182,6 @@ func (a *NeighAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.NDA_UNSPEC:
 			// unused attribute
 		case unix.NDA_DST:
-			l := len(ad.Bytes())
-			if l == 0 {
-				continue
-			}
 			a.Address = ad.Bytes()
 		case unix.NDA_LLADDR:
 			// Allow IEEE 802 MAC-48, EUI-48, EUI-64, or 20-octet
