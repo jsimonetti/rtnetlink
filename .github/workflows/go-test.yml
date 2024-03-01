@@ -67,7 +67,7 @@ jobs:
     steps:
     - name: Check for vulnerabilities
       id: govulncheck
-      uses: golang/govulncheck-action@7da72f730e37eeaad891fcff0a532d27ed737cd4
+      uses: golang/govulncheck-action@3a32958c2706f7048305d5a2e53633d7e37e97d0
       with:
         cache: false
         go-version-input: ${{ matrix.go-version }}
