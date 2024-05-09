@@ -99,9 +99,9 @@ func TestLinkMessageMarshalBinary(t *testing.T) {
 					Name:      "lo",
 					Info: &LinkInfo{
 						Kind:      "data",
-						Data:      []byte{1, 2, 3, 4, 5, 6, 7, 8, 9},
+						Data:      &LinkData{Name: "data", Data: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9}},
 						SlaveKind: "foo",
-						SlaveData: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9},
+						SlaveData: &LinkData{Name: "foo", Data: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9}, Slave: true},
 					},
 				},
 			},
@@ -359,9 +359,9 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 					Name:      "lo",
 					Info: &LinkInfo{
 						Kind:      "data",
-						Data:      []byte{1, 2, 3, 4, 5, 6, 7, 8, 9},
+						Data:      &LinkData{Name: "data", Data: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9}},
 						SlaveKind: "foo",
-						SlaveData: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9},
+						SlaveData: &LinkData{Name: "foo", Data: []byte{1, 2, 3, 4, 5, 6, 7, 8, 9}, Slave: true},
 					},
 				},
 			},
