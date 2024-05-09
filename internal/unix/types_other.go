@@ -67,6 +67,8 @@ const (
 	IFLA_INFO_SLAVE_KIND        = 0x4
 	IFLA_INFO_DATA              = 0x2
 	IFLA_INFO_SLAVE_DATA        = 0x5
+	IFLA_NET_NS_PID             = 0x13
+	IFLA_NET_NS_FD              = 0x1c
 	IFLA_XDP                    = 0x2b
 	IFLA_XDP_FD                 = 0x1
 	IFLA_XDP_ATTACHED           = 0x2

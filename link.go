@@ -222,6 +222,7 @@ type LinkAttributes struct {
 	TxQueueLen       *uint32          // Interface transmit queue len in number of packets
 	Type             uint32           // Link type
 	XDP              *LinkXDP         // Express Data Patch Information
+	NetNS            *NetNS           // Interface network namespace
 }
 
 // OperationalState represents an interface's operational state.
@@ -391,6 +392,10 @@ func (a *LinkAttributes) encode(ae *netlink.AttributeEncoder) error {
 
 	if a.Master != nil {
 		ae.Uint32(unix.IFLA_MASTER, *a.Master)
+	}
+
+	if a.NetNS != nil {
+		ae.Uint32(a.NetNS.Type(), a.NetNS.Value())
 	}
 
 	return nil

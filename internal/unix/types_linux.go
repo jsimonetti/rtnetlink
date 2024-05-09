@@ -71,6 +71,8 @@ const (
 	IFLA_INFO_SLAVE_KIND        = linux.IFLA_INFO_SLAVE_KIND
 	IFLA_INFO_DATA              = linux.IFLA_INFO_DATA
 	IFLA_INFO_SLAVE_DATA        = linux.IFLA_INFO_SLAVE_DATA
+	IFLA_NET_NS_PID             = linux.IFLA_NET_NS_PID
+	IFLA_NET_NS_FD              = linux.IFLA_NET_NS_FD
 	IFLA_XDP                    = linux.IFLA_XDP
 	IFLA_XDP_FD                 = linux.IFLA_XDP_FD
 	IFLA_XDP_ATTACHED           = linux.IFLA_XDP_ATTACHED
