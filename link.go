@@ -330,10 +330,17 @@ func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
 
 // MarshalBinary marshals a LinkAttributes into a byte slice.
 func (a *LinkAttributes) encode(ae *netlink.AttributeEncoder) error {
-	ae.Uint16(unix.IFLA_UNSPEC, 0)
-	ae.String(unix.IFLA_IFNAME, a.Name)
-	ae.Uint32(unix.IFLA_LINK, a.Type)
-	ae.String(unix.IFLA_QDISC, a.QueueDisc)
+	if a.Name != "" {
+		ae.String(unix.IFLA_IFNAME, a.Name)
+	}
+
+	if a.Type != 0 {
+		ae.Uint32(unix.IFLA_LINK, a.Type)
+	}
+
+	if a.QueueDisc != "" {
+		ae.String(unix.IFLA_QDISC, a.QueueDisc)
+	}
 
 	if a.MTU != 0 {
 		ae.Uint32(unix.IFLA_MTU, a.MTU)
