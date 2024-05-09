@@ -117,6 +117,12 @@ const (
 	IFLA_INFO_SLAVE_DATA                       = 0x5
 	IFLA_NET_NS_PID                            = 0x13
 	IFLA_NET_NS_FD                             = 0x1c
+	IFLA_NETKIT_UNSPEC                         = 0x0
+	IFLA_NETKIT_PEER_INFO                      = 0x1
+	IFLA_NETKIT_PRIMARY                        = 0x2
+	IFLA_NETKIT_POLICY                         = 0x3
+	IFLA_NETKIT_PEER_POLICY                    = 0x4
+	IFLA_NETKIT_MODE                           = 0x5
 	IFLA_XDP                                   = 0x2b
 	IFLA_XDP_FD                                = 0x1
 	IFLA_XDP_ATTACHED                          = 0x2
@@ -193,4 +199,10 @@ const (
 	FRA_IP_PROTO                               = 0x16
 	FRA_SPORT_RANGE                            = 0x17
 	FRA_DPORT_RANGE                            = 0x18
+	NETKIT_NEXT                                = -0x1
+	NETKIT_PASS                                = 0x0
+	NETKIT_DROP                                = 0x2
+	NETKIT_REDIRECT                            = 0x7
+	NETKIT_L2                                  = 0x0
+	NETKIT_L3                                  = 0x1
 )

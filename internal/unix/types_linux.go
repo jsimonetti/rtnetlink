@@ -121,6 +121,12 @@ const (
 	IFLA_INFO_SLAVE_DATA                       = linux.IFLA_INFO_SLAVE_DATA
 	IFLA_NET_NS_PID                            = linux.IFLA_NET_NS_PID
 	IFLA_NET_NS_FD                             = linux.IFLA_NET_NS_FD
+	IFLA_NETKIT_UNSPEC                         = linux.IFLA_NETKIT_UNSPEC
+	IFLA_NETKIT_PEER_INFO                      = linux.IFLA_NETKIT_PEER_INFO
+	IFLA_NETKIT_PRIMARY                        = linux.IFLA_NETKIT_PRIMARY
+	IFLA_NETKIT_POLICY                         = linux.IFLA_NETKIT_POLICY
+	IFLA_NETKIT_PEER_POLICY                    = linux.IFLA_NETKIT_PEER_POLICY
+	IFLA_NETKIT_MODE                           = linux.IFLA_NETKIT_MODE
 	IFLA_XDP                                   = linux.IFLA_XDP
 	IFLA_XDP_FD                                = linux.IFLA_XDP_FD
 	IFLA_XDP_ATTACHED                          = linux.IFLA_XDP_ATTACHED
@@ -197,4 +203,10 @@ const (
 	FRA_IP_PROTO                               = linux.FRA_IP_PROTO
 	FRA_SPORT_RANGE                            = linux.FRA_SPORT_RANGE
 	FRA_DPORT_RANGE                            = linux.FRA_DPORT_RANGE
+	NETKIT_NEXT                                = linux.NETKIT_NEXT
+	NETKIT_PASS                                = linux.NETKIT_PASS
+	NETKIT_DROP                                = linux.NETKIT_DROP
+	NETKIT_REDIRECT                            = linux.NETKIT_REDIRECT
+	NETKIT_L2                                  = linux.NETKIT_L2
+	NETKIT_L3                                  = linux.NETKIT_L3
 )
