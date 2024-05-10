@@ -4,7 +4,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/jsimonetti/rtnetlink"
+	"github.com/jsimonetti/rtnetlink/v2"
 )
 
 // Set the operational state an interface to Down

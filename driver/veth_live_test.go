@@ -6,7 +6,7 @@ package driver
 import (
 	"testing"
 
-	"github.com/jsimonetti/rtnetlink"
+	"github.com/jsimonetti/rtnetlink/v2"
 	"github.com/mdlayher/netlink"
 )
 

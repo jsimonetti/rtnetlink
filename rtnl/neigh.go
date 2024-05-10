@@ -3,7 +3,7 @@ package rtnl
 import (
 	"net"
 
-	"github.com/jsimonetti/rtnetlink"
+	"github.com/jsimonetti/rtnetlink/v2"
 )
 
 // Neigh represents a neighbour table entry (e.g. an entry in the ARP table)

@@ -1,4 +1,4 @@
-module github.com/jsimonetti/rtnetlink
+module github.com/jsimonetti/rtnetlink/v2
 
 go 1.20
 
