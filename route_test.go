@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/jsimonetti/rtnetlink/internal/unix"
+	"github.com/jsimonetti/rtnetlink/v2/internal/unix"
 )
 
 // Tests will only pass on little endian machines

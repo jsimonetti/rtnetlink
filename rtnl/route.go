@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/jsimonetti/rtnetlink/internal/unix"
+	"github.com/jsimonetti/rtnetlink/v2/internal/unix"
 
-	"github.com/jsimonetti/rtnetlink"
+	"github.com/jsimonetti/rtnetlink/v2"
 )
 
 // Route represents a route table entry

@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jsimonetti/rtnetlink/internal/unix"
+	"github.com/jsimonetti/rtnetlink/v2/internal/unix"
 )
 
 // NetNS represents a Linux network namespace

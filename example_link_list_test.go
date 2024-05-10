@@ -3,7 +3,7 @@ package rtnetlink_test
 import (
 	"log"
 
-	"github.com/jsimonetti/rtnetlink"
+	"github.com/jsimonetti/rtnetlink/v2"
 )
 
 // List all interfaces

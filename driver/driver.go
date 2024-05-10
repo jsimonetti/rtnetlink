@@ -1,7 +1,7 @@
 package driver
 
 import (
-	"github.com/jsimonetti/rtnetlink"
+	"github.com/jsimonetti/rtnetlink/v2"
 )
 
 // init registers predefined drivers with the rtnetlink package.
