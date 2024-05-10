@@ -212,10 +212,10 @@ func (a *AddressAttributes) encode(ae *netlink.AttributeEncoder) error {
 
 // CacheInfo contains address information
 type CacheInfo struct {
-	Prefered uint32
-	Valid    uint32
-	Created  uint32
-	Updated  uint32
+	Preferred uint32
+	Valid     uint32
+	Created   uint32
+	Updated   uint32
 }
 
 // decode decodes raw bytes into a CacheInfo's fields.
@@ -224,7 +224,7 @@ func (c *CacheInfo) decode(b []byte) error {
 		return fmt.Errorf("rtnetlink: incorrect CacheInfo size, want: 16, got: %d", len(b))
 	}
 
-	c.Prefered = nativeEndian.Uint32(b[0:4])
+	c.Preferred = nativeEndian.Uint32(b[0:4])
 	c.Valid = nativeEndian.Uint32(b[4:8])
 	c.Created = nativeEndian.Uint32(b[8:12])
 	c.Updated = nativeEndian.Uint32(b[12:16])
