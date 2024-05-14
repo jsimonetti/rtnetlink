@@ -771,8 +771,8 @@ func (xdp *LinkXDP) encode(ae *netlink.AttributeEncoder) error {
 	ae.Int32(unix.IFLA_XDP_FD, xdp.FD)
 	ae.Int32(unix.IFLA_XDP_EXPECTED_FD, xdp.ExpectedFD)
 	ae.Uint32(unix.IFLA_XDP_FLAGS, xdp.Flags)
-	// XDP_ATtACHED and XDP_PROG_ID are things that only can return from the kernel,
-	// not be send, so we don't encode them.
-	// source: https://elixir.bootlin.com/linux/v5.10.15/source/net/core/rtnetlink.c#L2894
+	// XDP_ATTACHED and XDP_PROG_ID are things that can only be returned by the
+	// kernel, so we don't encode them. source:
+	// https://elixir.bootlin.com/linux/v5.10.15/source/net/core/rtnetlink.c#L2894
 	return nil
 }
