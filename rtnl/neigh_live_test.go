@@ -6,6 +6,8 @@ package rtnl
 import (
 	"net"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 func TestLiveNeighbours(t *testing.T) {
@@ -27,26 +29,32 @@ func TestLiveNeighbours(t *testing.T) {
 	}
 	for i, e := range neigtab {
 		t.Logf("* neighbour table entry [%d]: %v", i, e)
-		if e.IP.IsUnspecified() {
-			// This test doesn't seem to be very reliable
-			// Disabling for now
-			// t.Error("zero e.IP, expected non-zero")
+
+		// Ignore neighbor entries in internal/pseudo state.
+		if e.State == unix.NUD_NONE {
 			continue
 		}
+		// Loopback and p2p interfaces can have neigh entries with a zero IP address.
+		if e.IP.IsUnspecified() {
+			continue
+		}
+
 		if e.Interface == nil {
 			t.Error("nil e.Interface, expected non-nil")
-			continue
 		}
 		if len(e.Interface.Name) == 0 {
 			t.Error("zero-length e.Interface.Name")
 		}
-		if e.IP.IsLoopback() {
+
+		// Don't (always) expect hardware address info on entries marked noarp,
+		// as they include link-local multicast and loopback addresses that are
+		// valid for all interfaces on the host.
+		if e.State == unix.NUD_NOARP {
 			continue
 		}
+
 		if hardwareAddrIsUnspecified(e.HwAddr) {
-			// This test doesn't seem to be very reliable
-			// Disabling for now
-			// t.Error("zero e.HwAddr, expected non-zero")
+			t.Error("zero e.HwAddr, expected non-zero")
 		}
 		if hardwareAddrIsUnspecified(e.Interface.HardwareAddr) {
 			t.Error("zero e.Interface.HardwareAddr, expected non-zero")

@@ -11,6 +11,10 @@ type Neigh struct {
 	HwAddr    net.HardwareAddr // Link-layer address
 	IP        net.IP           // Network-layer address
 	Interface *net.Interface   // Network interface
+
+	// Bitfield representing the state of the neighbor entry,
+	// corresponding to the NUD_ constants.
+	State uint16
 }
 
 // Neighbours lists entries from the neighbor table (e.g. the ARP table).
@@ -46,6 +50,7 @@ func (c *Conn) Neighbours(ifc *net.Interface, family int) (r []*Neigh, err error
 			HwAddr:    m.Attributes.LLAddress,
 			IP:        m.Attributes.Address,
 			Interface: iface,
+			State:     m.State,
 		}
 		r = append(r, p)
 	}
