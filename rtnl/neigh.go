@@ -42,7 +42,9 @@ func (c *Conn) Neighbours(ifc *net.Interface, family int) (r []*Neigh, err error
 		if !ok {
 			iface, err = c.LinkByIndex(ifindex)
 			if err != nil {
-				return nil, err
+				// Received a neigh entry for a link that no longer exists, so we cannot
+				// populate the Interface field. Skip the entry.
+				continue
 			}
 			ifcache[ifindex] = iface
 		}
