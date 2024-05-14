@@ -4,41 +4,9 @@
 package driver
 
 import (
-	"bytes"
-	"fmt"
-	"testing"
-
 	"github.com/jsimonetti/rtnetlink/v2"
 	"golang.org/x/sys/unix"
 )
-
-func getKernelVersion() (kernel, major, minor int, err error) {
-	var uname unix.Utsname
-	if err := unix.Uname(&uname); err != nil {
-		return 0, 0, 0, err
-	}
-
-	end := bytes.IndexByte(uname.Release[:], 0)
-	versionStr := uname.Release[:end]
-
-	if count, _ := fmt.Sscanf(string(versionStr), "%d.%d.%d", &kernel, &major, &minor); count < 2 {
-		err = fmt.Errorf("failed to parse kernel version from: %q", string(versionStr))
-	}
-	return
-}
-
-// kernelMinReq checks if the runtime kernel is sufficient
-// for the test
-func kernelMinReq(t *testing.T, kernel, major int) {
-	k, m, _, err := getKernelVersion()
-	if err != nil {
-		t.Fatalf("failed to get host kernel version: %v", err)
-	}
-	if k < kernel || k == kernel && m < major {
-		t.Skipf("host kernel (%d.%d) does not meet test's minimum required version: (%d.%d)",
-			k, m, kernel, major)
-	}
-}
 
 // setupInterface create a interface for testing
 func setupInterface(conn *rtnetlink.Conn, name string, index, master uint32, driver rtnetlink.LinkDriver) error {

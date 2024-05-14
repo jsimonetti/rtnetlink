@@ -4,8 +4,6 @@
 package rtnetlink
 
 import (
-	"bytes"
-	"fmt"
 	"testing"
 
 	"github.com/cilium/ebpf"
@@ -18,34 +16,6 @@ import (
 
 // lo accesses the loopback interface present in every network namespace.
 var lo uint32 = 1
-
-func getKernelVersion() (kernel, major, minor int, err error) {
-	var uname unix.Utsname
-	if err := unix.Uname(&uname); err != nil {
-		return 0, 0, 0, err
-	}
-
-	end := bytes.IndexByte(uname.Release[:], 0)
-	versionStr := uname.Release[:end]
-
-	if count, _ := fmt.Sscanf(string(versionStr), "%d.%d.%d", &kernel, &major, &minor); count < 2 {
-		err = fmt.Errorf("failed to parse kernel version from: %q", string(versionStr))
-	}
-	return
-}
-
-// kernelMinReq checks if the runtime kernel is sufficient
-// for the test
-func kernelMinReq(t *testing.T, kernel, major int) {
-	k, m, _, err := getKernelVersion()
-	if err != nil {
-		t.Fatalf("failed to get host kernel version: %v", err)
-	}
-	if k < kernel || k == kernel && m < major {
-		t.Skipf("host kernel (%d.%d) does not meet test's minimum required version: (%d.%d)",
-			k, m, kernel, major)
-	}
-}
 
 func xdpPrograms(tb testing.TB) (int32, int32) {
 	tb.Helper()
@@ -218,7 +188,7 @@ func TestLinkXDPReplace(t *testing.T) {
 	// https://elixir.bootlin.com/linux/v5.6/source/net/core/dev.c#L8662
 	// source kernel 5.7:
 	// https://elixir.bootlin.com/linux/v5.7/source/net/core/dev.c#L8674
-	kernelMinReq(t, 5, 7)
+	testutils.SkipOnOldKernel(t, "5.7", "XDP_FLAGS_REPLACE")
 
 	if err := rlimit.RemoveMemlock(); err != nil {
 		t.Fatal(err)

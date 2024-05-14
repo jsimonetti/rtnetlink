@@ -13,7 +13,7 @@ import (
 )
 
 func TestNetkit(t *testing.T) {
-	kernelMinReq(t, 6, 7)
+	testutils.SkipOnOldKernel(t, "6.7", "netkit support")
 
 	conn, err := rtnetlink.Dial(nil)
 	if err != nil {
