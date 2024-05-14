@@ -10,6 +10,7 @@ import (
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/asm"
+	"github.com/cilium/ebpf/rlimit"
 	"golang.org/x/sys/unix"
 )
 
@@ -116,11 +117,8 @@ func GetXDPProperties(conn *Conn, ifIndex uint32) (uint8, uint32, error) {
 }
 
 func TestLinkXDPAttach(t *testing.T) {
-	// BPF loading requires a high RLIMIT_MEMLOCK.
-	n := uint64(1024 * 1024 * 10)
-	err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{Cur: n, Max: n})
-	if err != nil {
-		t.Fatalf("failed to increase RLIMIT_MEMLOCK: %v", err)
+	if err := rlimit.RemoveMemlock(); err != nil {
+		t.Fatal(err)
 	}
 
 	// establish a netlink connections
@@ -206,11 +204,8 @@ func TestLinkXDPAttach(t *testing.T) {
 }
 
 func TestLinkXDPClear(t *testing.T) {
-	// BPF loading requires a high RLIMIT_MEMLOCK.
-	n := uint64(1024 * 1024 * 10)
-	err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{Cur: n, Max: n})
-	if err != nil {
-		t.Fatalf("failed to increase RLIMIT_MEMLOCK: %v", err)
+	if err := rlimit.RemoveMemlock(); err != nil {
+		t.Fatal(err)
 	}
 
 	// establish a netlink connections
@@ -280,11 +275,8 @@ func TestLinkXDPReplace(t *testing.T) {
 	// https://elixir.bootlin.com/linux/v5.7/source/net/core/dev.c#L8674
 	kernelMinReq(t, 5, 7)
 
-	// BPF loading requires a high RLIMIT_MEMLOCK.
-	n := uint64(1024 * 1024 * 10)
-	err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{Cur: n, Max: n})
-	if err != nil {
-		t.Fatalf("failed to increase RLIMIT_MEMLOCK: %v", err)
+	if err := rlimit.RemoveMemlock(); err != nil {
+		t.Fatal(err)
 	}
 
 	// establish a netlink connections
