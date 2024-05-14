@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jsimonetti/rtnetlink/v2"
+	"github.com/jsimonetti/rtnetlink/v2/internal/testutils"
 	"github.com/mdlayher/netlink"
 )
 
@@ -34,23 +35,15 @@ func bondSlaveT(d rtnetlink.LinkDriver) *BondSlave {
 }
 
 func TestBond(t *testing.T) {
-	// establish a netlink connection
 	conn, err := rtnetlink.Dial(nil)
 	if err != nil {
 		t.Fatalf("failed to establish netlink socket: %v", err)
 	}
 	defer conn.Close()
 
-	bns, clean, err := createNS("bns1")
+	connNS, err := rtnetlink.Dial(&netlink.Config{NetNS: testutils.NetNS(t)})
 	if err != nil {
-		t.Fatal(err)
-	}
-	defer clean()
-
-	// use ns for testing arp ip targets
-	connNS, err := rtnetlink.Dial(&netlink.Config{NetNS: int(bns.Value())})
-	if err != nil {
-		t.Fatalf("failed to establish netlink socket to ns nkns: %v", err)
+		t.Fatalf("failed to establish netlink socket to netns: %v", err)
 	}
 	defer connNS.Close()
 

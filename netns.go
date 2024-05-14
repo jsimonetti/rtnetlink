@@ -1,54 +1,46 @@
 package rtnetlink
 
 import (
-	"os"
-	"path/filepath"
-
 	"github.com/jsimonetti/rtnetlink/v2/internal/unix"
 )
 
-// NetNS represents a Linux network namespace
+// NetNS represents a Linux network namespace handle to specify in
+// [LinkAttributes].
+//
+// Use [NetNSForPID] to create a handle to the network namespace of an existing
+// PID, or [NetNSForFD] for a handle to an existing network namespace created by
+// another library.
 type NetNS struct {
-	file *os.File
-	pid  uint32
+	fd  *uint32
+	pid *uint32
 }
 
-// NewNetNS returns a new NetNS from the given type
-// When an uint32 is given simply the pid value is set
-// When a string is given a namespace file is opened with the name and the file descriptor is set
-// The file descriptor should be closed after use with the Close() method
-func NewNetNS[T string | uint32](t T) (*NetNS, error) {
-	if name, ok := any(t).(string); ok {
-		file, err := os.Open(filepath.Join("/var/run/netns", name))
-		if err != nil {
-			return nil, err
-		}
-
-		return &NetNS{file: file}, nil
-	}
-	return &NetNS{pid: any(t).(uint32)}, nil
+// NetNSForPID returns a handle to the network namespace of an existing process
+// given its pid. The process must be alive when the NetNS is used in any API
+// calls.
+//
+// The resulting NetNS doesn't hold a hard reference to the netns (it doesn't
+// increase its refcount) and becomes invalid when the process it points to
+// dies.
+func NetNSForPID(pid uint32) *NetNS {
+	return &NetNS{pid: &pid}
 }
 
-// Type returns either unix.IFLA_NET_NS_FD or unix.IFLA_NET_NS_PID according ns data type
-func (n *NetNS) Type() uint16 {
-	if n.file != nil {
-		return unix.IFLA_NET_NS_FD
-	}
-	return unix.IFLA_NET_NS_PID
+// NetNSForFD returns a handle to an existing network namespace created by
+// another library. It does not clone fd or manage its lifecycle in any way.
+// The caller is responsible for making sure the underlying fd stays alive
+// for the duration of any API calls using the NetNS.
+func NetNSForFD(fd uint32) *NetNS {
+	return &NetNS{fd: &fd}
 }
 
-// Value returns either a file descriptor value or the pid value of the ns
-func (n *NetNS) Value() uint32 {
-	if n.file != nil {
-		return uint32(n.file.Fd())
+// value returns the type and value of the NetNS for use in netlink attributes.
+func (ns *NetNS) value() (uint16, uint32) {
+	if ns.fd != nil {
+		return unix.IFLA_NET_NS_FD, *ns.fd
 	}
-	return n.pid
-}
-
-// Close closes the file descriptor
-func (n *NetNS) Close() error {
-	if n.file != nil {
-		return n.file.Close()
+	if ns.pid != nil {
+		return unix.IFLA_NET_NS_PID, *ns.pid
 	}
-	return nil
+	return 0, 0
 }

@@ -7,28 +7,21 @@ import (
 	"testing"
 
 	"github.com/jsimonetti/rtnetlink/v2"
+	"github.com/jsimonetti/rtnetlink/v2/internal/testutils"
 	"github.com/mdlayher/netlink"
 )
 
 func TestVeth(t *testing.T) {
-	// establish a netlink connection
 	conn, err := rtnetlink.Dial(nil)
 	if err != nil {
 		t.Fatalf("failed to establish netlink socket: %v", err)
 	}
 	defer conn.Close()
 
-	// create netns
-	vtns, clean, err := createNS("vtns1")
+	ns := testutils.NetNS(t)
+	connNS, err := rtnetlink.Dial(&netlink.Config{NetNS: ns})
 	if err != nil {
-		t.Fatal(err)
-	}
-	defer clean()
-
-	// establish a netlink connection with netns
-	connNS, err := rtnetlink.Dial(&netlink.Config{NetNS: int(vtns.Value())})
-	if err != nil {
-		t.Fatalf("failed to establish netlink socket to ns vtns1: %v", err)
+		t.Fatalf("failed to establish netlink socket to netns: %v", err)
 	}
 	defer connNS.Close()
 
@@ -74,7 +67,7 @@ func TestVeth(t *testing.T) {
 					Index: ifPeerIndex,
 					Attributes: &rtnetlink.LinkAttributes{
 						Name:  "vte",
-						NetNS: vtns,
+						NetNS: rtnetlink.NetNSForFD(uint32(ns)),
 					},
 				},
 			},

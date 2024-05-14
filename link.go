@@ -403,7 +403,7 @@ func (a *LinkAttributes) encode(ae *netlink.AttributeEncoder) error {
 	}
 
 	if a.NetNS != nil {
-		ae.Uint32(a.NetNS.Type(), a.NetNS.Value())
+		ae.Uint32(a.NetNS.value())
 	}
 
 	return nil

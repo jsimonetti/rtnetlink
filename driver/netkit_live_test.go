@@ -8,30 +8,23 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jsimonetti/rtnetlink/v2"
+	"github.com/jsimonetti/rtnetlink/v2/internal/testutils"
 	"github.com/mdlayher/netlink"
 )
 
 func TestNetkit(t *testing.T) {
 	kernelMinReq(t, 6, 7)
 
-	// establish a netlink connection
 	conn, err := rtnetlink.Dial(nil)
 	if err != nil {
 		t.Fatalf("failed to establish netlink socket: %v", err)
 	}
 	defer conn.Close()
 
-	// create netns
-	nkns, clean, err := createNS("nkns1")
+	ns := testutils.NetNS(t)
+	connNS, err := rtnetlink.Dial(&netlink.Config{NetNS: ns})
 	if err != nil {
-		t.Fatal(err)
-	}
-	defer clean()
-
-	// establish a netlink connection with netns
-	connNS, err := rtnetlink.Dial(&netlink.Config{NetNS: int(nkns.Value())})
-	if err != nil {
-		t.Fatalf("failed to establish netlink socket to ns nkns: %v", err)
+		t.Fatalf("failed to establish netlink socket to netns: %v", err)
 	}
 	defer connNS.Close()
 
@@ -110,7 +103,7 @@ func TestNetkit(t *testing.T) {
 					Index: ifPeerIndex,
 					Attributes: &rtnetlink.LinkAttributes{
 						Name:  "nke",
-						NetNS: nkns,
+						NetNS: rtnetlink.NetNSForFD(uint32(ns)),
 					},
 				},
 			},

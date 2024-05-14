@@ -6,7 +6,6 @@ package driver
 import (
 	"bytes"
 	"fmt"
-	"os/exec"
 	"testing"
 
 	"github.com/jsimonetti/rtnetlink/v2"
@@ -73,31 +72,4 @@ func getInterface(conn *rtnetlink.Conn, index uint32) (*rtnetlink.LinkMessage, e
 		return nil, err
 	}
 	return &interf, err
-}
-
-// creates a network namespace by utilizing ip commandline tool
-// returns NetNS and clean function
-func createNS(name string) (*rtnetlink.NetNS, func(), error) {
-	cmdPath, err := exec.LookPath("ip")
-	if err != nil {
-		return nil, nil, fmt.Errorf("getting ip command path failed, %w", err)
-	}
-	_, err = exec.Command(cmdPath, "netns", "add", name).Output()
-	if err != nil {
-		return nil, nil, fmt.Errorf("ip netns add %s, failed: %w", name, err)
-	}
-
-	ns, err := rtnetlink.NewNetNS(name)
-	if err != nil {
-		return nil, nil, fmt.Errorf("reading ns %s, failed: %w", name, err)
-	}
-	return ns, func() {
-		if err := ns.Close(); err != nil {
-			fmt.Printf("closing ns file failed: %v", err)
-		}
-		_, err := exec.Command(cmdPath, "netns", "del", name).Output()
-		if err != nil {
-			fmt.Printf("removing netns %s failed, %v", name, err)
-		}
-	}, nil
 }
