@@ -1,3 +1,5 @@
+// Package driver provides link type specific decoding and encoding types
+// for use with the rtnetlink library.
 package driver
 
 import (
