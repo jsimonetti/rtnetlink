@@ -4,72 +4,23 @@
 package rtnetlink
 
 import (
-	"bytes"
-	"fmt"
 	"testing"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/asm"
+	"github.com/cilium/ebpf/rlimit"
+	"github.com/jsimonetti/rtnetlink/v2/internal/testutils"
+	"github.com/mdlayher/netlink"
 	"golang.org/x/sys/unix"
 )
 
-func getKernelVersion() (kernel, major, minor int, err error) {
-	var uname unix.Utsname
-	if err := unix.Uname(&uname); err != nil {
-		return 0, 0, 0, err
-	}
+// lo accesses the loopback interface present in every network namespace.
+var lo uint32 = 1
 
-	end := bytes.IndexByte(uname.Release[:], 0)
-	versionStr := uname.Release[:end]
+func xdpPrograms(tb testing.TB) (int32, int32) {
+	tb.Helper()
 
-	if count, _ := fmt.Sscanf(string(versionStr), "%d.%d.%d", &kernel, &major, &minor); count < 2 {
-		err = fmt.Errorf("failed to parse kernel version from: %q", string(versionStr))
-	}
-	return
-}
-
-// kernelMinReq checks if the runtime kernel is sufficient
-// for the test
-func kernelMinReq(t *testing.T, kernel, major int) {
-	k, m, _, err := getKernelVersion()
-	if err != nil {
-		t.Fatalf("failed to get host kernel version: %v", err)
-	}
-	if k < kernel || k == kernel && m < major {
-		t.Skipf("host kernel (%d.%d) does not meet test's minimum required version: (%d.%d)",
-			k, m, kernel, major)
-	}
-}
-
-// SetupDummyInterface create a dummy interface for testing and returns its
-// properties
-func SetupDummyInterface(conn *Conn, name string) (*LinkMessage, error) {
-	// construct dummy interface to test XDP program against
-	if err := conn.Link.New(&LinkMessage{
-		Family: unix.AF_UNSPEC,
-		Index:  1001,
-		Flags:  unix.IFF_UP,
-		Attributes: &LinkAttributes{
-			Name: name,
-			Info: &LinkInfo{Kind: "dummy"},
-		},
-	}); err != nil {
-		return nil, err
-	}
-
-	// get info for the dummy interface
-	interf, err := conn.Link.Get(1001)
-	if err != nil {
-		conn.Link.Delete(interf.Index)
-		return nil, err
-	}
-	return &interf, err
-}
-
-func GetBPFPrograms() (int32, int32, error) {
-	// load a BPF test program. If it fails error out of the tests
-	// and clean up dummy interface. The program loads XDP_PASS
-	// into the return value register.
+	// Load XDP_PASS into the return value register.
 	bpfProgram := &ebpf.ProgramSpec{
 		Type: ebpf.XDP,
 		Instructions: asm.Instructions{
@@ -80,20 +31,26 @@ func GetBPFPrograms() (int32, int32, error) {
 	}
 	prog1, err := ebpf.NewProgram(bpfProgram)
 	if err != nil {
-		return 0, 0, err
+		tb.Fatal(err)
 	}
 
 	prog2, err := ebpf.NewProgram(bpfProgram)
 	if err != nil {
-		return 0, 0, err
+		tb.Fatal(err)
 	}
 
+	tb.Cleanup(func() {
+		prog1.Close()
+		prog2.Close()
+	})
+
 	// Use the file descriptor of the programs
-	return int32(prog1.FD()), int32(prog2.FD()), nil
+	return int32(prog1.FD()), int32(prog2.FD())
 }
 
-// SendXDPMsg sends a XDP netlink msg with the specified LinkXDP properties
-func SendXPDMsg(conn *Conn, ifIndex uint32, xdp *LinkXDP) error {
+func attachXDP(tb testing.TB, conn *Conn, ifIndex uint32, xdp *LinkXDP) {
+	tb.Helper()
+
 	message := LinkMessage{
 		Family: unix.AF_UNSPEC,
 		Index:  ifIndex,
@@ -102,46 +59,36 @@ func SendXPDMsg(conn *Conn, ifIndex uint32, xdp *LinkXDP) error {
 		},
 	}
 
-	return conn.Link.Set(&message)
+	if err := conn.Link.Set(&message); err != nil {
+		tb.Fatalf("attaching program with fd %d to link at ifindex %d: %s", xdp.FD, ifIndex, err)
+	}
 }
 
-// GetXDPProperties returns the XDP attach, XDP prog ID and errors when the
+// getXDP returns the XDP attach, XDP prog ID and errors when the
 // interface could not be fetched
-func GetXDPProperties(conn *Conn, ifIndex uint32) (uint8, uint32, error) {
+func getXDP(tb testing.TB, conn *Conn, ifIndex uint32) (uint8, uint32) {
+	tb.Helper()
+
 	interf, err := conn.Link.Get(ifIndex)
 	if err != nil {
-		return 0, 0, err
+		tb.Fatalf("getting link xdp properties: %s", err)
 	}
-	return interf.Attributes.XDP.Attached, interf.Attributes.XDP.ProgID, nil
+
+	return interf.Attributes.XDP.Attached, interf.Attributes.XDP.ProgID
 }
 
 func TestLinkXDPAttach(t *testing.T) {
-	// BPF loading requires a high RLIMIT_MEMLOCK.
-	n := uint64(1024 * 1024 * 10)
-	err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{Cur: n, Max: n})
-	if err != nil {
-		t.Fatalf("failed to increase RLIMIT_MEMLOCK: %v", err)
+	if err := rlimit.RemoveMemlock(); err != nil {
+		t.Fatal(err)
 	}
 
-	// establish a netlink connections
-	conn, err := Dial(nil)
+	conn, err := Dial(&netlink.Config{NetNS: testutils.NetNS(t)})
 	if err != nil {
 		t.Fatalf("failed to establish netlink socket: %v", err)
 	}
 	defer conn.Close()
 
-	// setup dummy interface for the test
-	interf, err := SetupDummyInterface(conn, "dummyXDPAttach")
-	if err != nil {
-		t.Fatalf("failed to setup dummy interface: %v", err)
-	}
-	defer conn.Link.Delete(interf.Index)
-
-	// get a BPF program
-	progFD1, progFD2, err := GetBPFPrograms()
-	if err != nil {
-		t.Fatalf("failed to load bpf programs: %v", err)
-	}
+	progFD1, progFD2 := xdpPrograms(t)
 
 	tests := []struct {
 		name string
@@ -182,22 +129,12 @@ func TestLinkXDPAttach(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// attach the BPF program to the link
-			err = SendXPDMsg(conn, interf.Index, tt.xdp)
-			if err != nil {
-				t.Fatalf("failed to attach XDP program to link: %v", err)
-			}
+			attachXDP(t, conn, lo, tt.xdp)
 
-			// validate the XDP properites of the link
-			attached, progID, err := GetXDPProperties(conn, interf.Index)
-			if err != nil {
-				t.Fatalf("failed to get XDP properties from the link: %v", err)
-			}
-
+			attached, progID := getXDP(t, conn, lo)
 			if attached != unix.XDP_FLAGS_SKB_MODE {
 				t.Fatalf("XDP attached state does not match. Got: %d, wanted: %d", attached, unix.XDP_FLAGS_SKB_MODE)
 			}
-
 			if attached == unix.XDP_FLAGS_SKB_MODE && progID == 0 {
 				t.Fatalf("XDP program should be attached but program ID is 0")
 			}
@@ -206,60 +143,33 @@ func TestLinkXDPAttach(t *testing.T) {
 }
 
 func TestLinkXDPClear(t *testing.T) {
-	// BPF loading requires a high RLIMIT_MEMLOCK.
-	n := uint64(1024 * 1024 * 10)
-	err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{Cur: n, Max: n})
-	if err != nil {
-		t.Fatalf("failed to increase RLIMIT_MEMLOCK: %v", err)
+	if err := rlimit.RemoveMemlock(); err != nil {
+		t.Fatal(err)
 	}
 
-	// establish a netlink connections
-	conn, err := Dial(nil)
+	conn, err := Dial(&netlink.Config{NetNS: testutils.NetNS(t)})
 	if err != nil {
 		t.Fatalf("failed to establish netlink socket: %v", err)
 	}
 	defer conn.Close()
 
-	// setup dummy interface for the test
-	interf, err := SetupDummyInterface(conn, "dummyXDPClear")
-	if err != nil {
-		t.Fatalf("failed to setup dummy interface: %v", err)
-	}
-	defer conn.Link.Delete(interf.Index)
+	progFD1, _ := xdpPrograms(t)
 
-	// get a BPF program
-	progFD1, _, err := GetBPFPrograms()
-	if err != nil {
-		t.Fatalf("failed to load bpf programs: %v", err)
-	}
-
-	// attach the BPF program to the link
-	err = SendXPDMsg(conn, interf.Index, &LinkXDP{
+	attachXDP(t, conn, lo, &LinkXDP{
 		FD:    progFD1,
 		Flags: unix.XDP_FLAGS_SKB_MODE,
 	})
-	if err != nil {
-		t.Fatalf("failed to attach XDP program to link: %v", err)
-	}
 
 	// clear the BPF program from the link
-	err = SendXPDMsg(conn, interf.Index, &LinkXDP{
+	attachXDP(t, conn, lo, &LinkXDP{
 		FD:    -1,
 		Flags: unix.XDP_FLAGS_SKB_MODE,
 	})
-	if err != nil {
-		t.Fatalf("failed to clear XDP program to link: %v", err)
-	}
 
-	attached, progID, err := GetXDPProperties(conn, interf.Index)
-	if err != nil {
-		t.Fatalf("failed to get XDP program ID 1 from interface: %v", err)
-	}
-
+	attached, progID := getXDP(t, conn, lo)
 	if progID != 0 {
 		t.Fatalf("there is still a program loaded, while we cleared the link")
 	}
-
 	if attached != 0 {
 		t.Fatalf(
 			"XDP attached state does not match. Got: %d, wanted: %d\nThere should be no program loaded",
@@ -278,78 +188,53 @@ func TestLinkXDPReplace(t *testing.T) {
 	// https://elixir.bootlin.com/linux/v5.6/source/net/core/dev.c#L8662
 	// source kernel 5.7:
 	// https://elixir.bootlin.com/linux/v5.7/source/net/core/dev.c#L8674
-	kernelMinReq(t, 5, 7)
+	testutils.SkipOnOldKernel(t, "5.7", "XDP_FLAGS_REPLACE")
 
-	// BPF loading requires a high RLIMIT_MEMLOCK.
-	n := uint64(1024 * 1024 * 10)
-	err := unix.Setrlimit(unix.RLIMIT_MEMLOCK, &unix.Rlimit{Cur: n, Max: n})
-	if err != nil {
-		t.Fatalf("failed to increase RLIMIT_MEMLOCK: %v", err)
+	if err := rlimit.RemoveMemlock(); err != nil {
+		t.Fatal(err)
 	}
 
-	// establish a netlink connections
-	conn, err := Dial(nil)
+	conn, err := Dial(&netlink.Config{NetNS: testutils.NetNS(t)})
 	if err != nil {
 		t.Fatalf("failed to establish netlink socket: %v", err)
 	}
 	defer conn.Close()
 
-	// setup dummy interface for the test
-	interf, err := SetupDummyInterface(conn, "dummyXDPReplace")
-	if err != nil {
-		t.Fatalf("failed to setup dummy interface: %v", err)
-	}
-	defer conn.Link.Delete(interf.Index)
+	progFD1, progFD2 := xdpPrograms(t)
 
-	// get BPF programs
-	progFD1, progFD2, err := GetBPFPrograms()
-	if err != nil {
-		t.Fatalf("failed to load bpf programs: %v", err)
-	}
-
-	err = SendXPDMsg(conn, interf.Index, &LinkXDP{
+	attachXDP(t, conn, lo, &LinkXDP{
 		FD:    progFD1,
 		Flags: unix.XDP_FLAGS_SKB_MODE,
 	})
-	if err != nil {
-		t.Fatalf("failed to attach XDP program 1 to link: %v", err)
-	}
 
-	_, progID1, err := GetXDPProperties(conn, interf.Index)
-	if err != nil {
-		t.Fatalf("failed to get XDP program ID 1 from interface: %v", err)
-	}
+	_, progID1 := getXDP(t, conn, lo)
 
-	err = SendXPDMsg(conn, interf.Index, &LinkXDP{
-		FD:         progFD2,
-		ExpectedFD: progFD2,
-		Flags:      unix.XDP_FLAGS_SKB_MODE | unix.XDP_FLAGS_REPLACE,
-	})
-	if err == nil {
+	if err := conn.Link.Set(&LinkMessage{
+		Family: unix.AF_UNSPEC,
+		Index:  lo,
+		Attributes: &LinkAttributes{
+			XDP: &LinkXDP{
+				FD:         progFD2,
+				ExpectedFD: progFD2,
+				Flags:      unix.XDP_FLAGS_SKB_MODE | unix.XDP_FLAGS_REPLACE,
+			},
+		},
+	}); err == nil {
 		t.Fatalf("replaced XDP program while expected FD did not match: %v", err)
 	}
 
-	_, progID2, err := GetXDPProperties(conn, interf.Index)
-	if err != nil {
-		t.Fatalf("failed to get XDP program ID 2 from interface: %v", err)
-	}
+	_, progID2 := getXDP(t, conn, lo)
 	if progID2 != progID1 {
 		t.Fatal("XDP prog ID does not match previous program ID, which it should")
 	}
 
-	err = SendXPDMsg(conn, interf.Index, &LinkXDP{
+	attachXDP(t, conn, lo, &LinkXDP{
 		FD:         progFD2,
 		ExpectedFD: progFD1,
 		Flags:      unix.XDP_FLAGS_SKB_MODE | unix.XDP_FLAGS_REPLACE,
 	})
-	if err != nil {
-		t.Fatalf("could not replace XDP program: %v", err)
-	}
 
-	_, progID2, err = GetXDPProperties(conn, interf.Index)
-	if err != nil {
-		t.Fatalf("failed to get XDP program ID 2 from interface: %v", err)
-	}
+	_, progID2 = getXDP(t, conn, lo)
 	if progID2 == progID1 {
 		t.Fatal("XDP prog ID does match previous program ID, which it shouldn't")
 	}

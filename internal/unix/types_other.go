@@ -205,4 +205,15 @@ const (
 	NETKIT_REDIRECT                            = 0x7
 	NETKIT_L2                                  = 0x0
 	NETKIT_L3                                  = 0x1
+	CLONE_NEWNET                               = 0x40000000
+	O_RDONLY                                   = 0x0
+	O_CLOEXEC                                  = 0x80000
 )
+
+func Unshare(_ int) error {
+	return nil
+}
+
+func Gettid() int {
+	return 0
+}

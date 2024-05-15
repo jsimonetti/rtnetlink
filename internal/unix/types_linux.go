@@ -209,4 +209,10 @@ const (
 	NETKIT_REDIRECT                            = linux.NETKIT_REDIRECT
 	NETKIT_L2                                  = linux.NETKIT_L2
 	NETKIT_L3                                  = linux.NETKIT_L3
+	CLONE_NEWNET                               = linux.CLONE_NEWNET
+	O_RDONLY                                   = linux.O_RDONLY
+	O_CLOEXEC                                  = linux.O_CLOEXEC
 )
+
+var Gettid = linux.Gettid
+var Unshare = linux.Unshare
