@@ -239,3 +239,24 @@ func TestLinkXDPReplace(t *testing.T) {
 		t.Fatal("XDP prog ID does match previous program ID, which it shouldn't")
 	}
 }
+
+func TestLinkListByKind(t *testing.T) {
+	if err := rlimit.RemoveMemlock(); err != nil {
+		t.Fatal(err)
+	}
+
+	conn, err := Dial(&netlink.Config{NetNS: testutils.NetNS(t)})
+	if err != nil {
+		t.Fatalf("failed to establish netlink socket: %v", err)
+	}
+	defer conn.Close()
+
+	links, err := conn.Link.ListByKind("SomeImpossibleLinkKind")
+	if err != nil {
+		t.Fatalf("LinkListByKind() finished with error: %v", err)
+	}
+
+	if len(links) > 0 {
+		t.Fatalf("LinkListByKind() found %d links with impossible kind", len(links))
+	}
+}
