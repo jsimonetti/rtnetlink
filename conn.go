@@ -174,7 +174,7 @@ func unpackMessages(msgs []netlink.Message) ([]Message, error) {
 		var m Message
 		switch nm.Header.Type {
 		case unix.RTM_GETLINK, unix.RTM_NEWLINK, unix.RTM_DELLINK:
-			m = &LinkMessage{}
+			m = &LinkMessage{filtered: (nm.Header.Flags&netlink.DumpFiltered != 0)}
 		case unix.RTM_GETADDR, unix.RTM_NEWADDR, unix.RTM_DELADDR:
 			m = &AddressMessage{}
 		case unix.RTM_GETROUTE, unix.RTM_NEWROUTE, unix.RTM_DELROUTE:
