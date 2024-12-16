@@ -208,6 +208,7 @@ func (l *LinkService) List() ([]LinkMessage, error) {
 type LinkAttributes struct {
 	Address          net.HardwareAddr // Interface L2 address
 	Alias            *string          // Interface alias name
+	AltNames         []string         // Alternative interface names
 	Broadcast        net.HardwareAddr // L2 broadcast address
 	Carrier          *uint8           // Current physical link state of the interface.
 	CarrierChanges   *uint32          // Number of times the link has seen a change from UP to DOWN and vice versa
@@ -331,6 +332,17 @@ func (a *LinkAttributes) decode(ad *netlink.AttributeDecoder) error {
 		case unix.IFLA_XDP:
 			a.XDP = &LinkXDP{}
 			ad.Nested(a.XDP.decode)
+		case unix.IFLA_PROP_LIST:
+			// read nested encoded property list
+			nad, err := netlink.NewAttributeDecoder(ad.Bytes())
+			if err != nil {
+				return err
+			}
+			for nad.Next() {
+				if nad.Type() == unix.IFLA_ALT_IFNAME {
+					a.AltNames = append(a.AltNames, nad.String())
+				}
+			}
 		}
 	}
 
