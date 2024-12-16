@@ -355,6 +355,10 @@ func (a *LinkAttributes) encode(ae *netlink.AttributeEncoder) error {
 		ae.String(unix.IFLA_IFNAME, a.Name)
 	}
 
+	if a.Alias != nil {
+		ae.String(unix.IFLA_IFALIAS, *a.Alias)
+	}
+
 	if a.Type != 0 {
 		ae.Uint32(unix.IFLA_LINK, a.Type)
 	}
