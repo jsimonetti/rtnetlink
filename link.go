@@ -41,6 +41,9 @@ type LinkMessage struct {
 
 	// Attributes List
 	Attributes *LinkAttributes
+
+	// A response was filtered as requested, see NLM_F_DUMP_FILTERED
+	filtered bool
 }
 
 // MarshalBinary marshals a LinkMessage into a byte slice.
@@ -184,14 +187,26 @@ func (l *LinkService) Set(req *LinkMessage) error {
 
 func (l *LinkService) list(kind string) ([]LinkMessage, error) {
 	req := &LinkMessage{}
-	if kind != "" {
-		req.Attributes = &LinkAttributes{
-			Info: &LinkInfo{Kind: kind},
-		}
+	flags := netlink.Request | netlink.Dump
+
+	if kind == "" {
+		return l.execute(req, unix.RTM_GETLINK, flags)
 	}
 
-	flags := netlink.Request | netlink.Dump
-	return l.execute(req, unix.RTM_GETLINK, flags)
+	req.Attributes = &LinkAttributes{
+		Info: &LinkInfo{Kind: kind},
+	}
+
+	msgs, err := l.execute(req, unix.RTM_GETLINK, flags)
+
+	// All filtered links are marked by a NLM_F_DUMP_FILTERED flag
+	// no other links present in a response, so just check the first one
+	if err == nil && len(msgs) > 0 && !msgs[0].filtered {
+		msgs = []LinkMessage{}
+	}
+
+	return msgs, err
+
 }
 
 // ListByKind retrieves all interfaces of a specific kind.
