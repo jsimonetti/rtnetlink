@@ -158,6 +158,7 @@ type AddressAttributes struct {
 	CacheInfo CacheInfo // Address information
 	Multicast net.IP    // Multicast Ip address
 	Flags     uint32    // Address flags
+	Priority  uint32    // Priority/metric for prefix route
 }
 
 func (a *AddressAttributes) decode(ad *netlink.AttributeDecoder) error {
@@ -181,6 +182,8 @@ func (a *AddressAttributes) decode(ad *netlink.AttributeDecoder) error {
 			ad.Do(decodeIP(&a.Multicast))
 		case unix.IFA_FLAGS:
 			a.Flags = ad.Uint32()
+		case unix.IFA_RT_PRIORITY:
+			a.Priority = ad.Uint32()
 		}
 	}
 
@@ -206,6 +209,9 @@ func (a *AddressAttributes) encode(ae *netlink.AttributeEncoder) error {
 		ae.String(unix.IFA_LABEL, a.Label)
 	}
 	ae.Uint32(unix.IFA_FLAGS, a.Flags)
+	if a.Priority != 0 {
+		ae.Uint32(unix.IFA_RT_PRIORITY, a.Priority)
+	}
 
 	return nil
 }

@@ -39,6 +39,7 @@ const (
 	IFA_CACHEINFO                              = linux.IFA_CACHEINFO
 	IFA_MULTICAST                              = linux.IFA_MULTICAST
 	IFA_FLAGS                                  = linux.IFA_FLAGS
+	IFA_RT_PRIORITY                            = linux.IFA_RT_PRIORITY
 	IFF_UP                                     = linux.IFF_UP
 	IFF_BROADCAST                              = linux.IFF_BROADCAST
 	IFF_LOOPBACK                               = linux.IFF_LOOPBACK
