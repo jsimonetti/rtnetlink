@@ -35,6 +35,7 @@ const (
 	IFA_CACHEINFO                              = 0x6
 	IFA_MULTICAST                              = 0x7
 	IFA_FLAGS                                  = 0x8
+	IFA_RT_PRIORITY                            = 0x9
 	IFF_UP                                     = 0x1
 	IFF_BROADCAST                              = 0x2
 	IFF_LOOPBACK                               = 0x8
