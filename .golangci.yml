@@ -1,18 +1,34 @@
----
+version: "2"
 linters:
   enable:
-    - gofmt
     - misspell
     - revive
-
-linters-settings:
-  misspell:
-    ignore-words:
-      # Incorrect spelling used in CacheInfo struct.
-      - Prefered
-  revive:
-    rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-parameter
-      - name: unused-parameter
-        severity: warning
-        disabled: true
+  settings:
+    misspell:
+      ignore-rules:
+        - Prefered
+    revive:
+      rules:
+        - name: unused-parameter
+          severity: warning
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
