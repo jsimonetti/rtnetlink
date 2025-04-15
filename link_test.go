@@ -166,7 +166,7 @@ func TestLinkMessageUnmarshalBinary(t *testing.T) {
 
 	var val_uint8_1 uint8 = 1
 	var val_uint32_1 uint32 = 1
-	var val_string_3c string = "rtl"
+	var val_string_3c = "rtl"
 
 	tests := []struct {
 		name string
