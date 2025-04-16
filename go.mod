@@ -15,5 +15,5 @@ require (
 require (
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
-	golang.org/x/net v0.36.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 )
