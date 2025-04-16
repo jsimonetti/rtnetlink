@@ -8,7 +8,7 @@ require (
 	github.com/cilium/ebpf v0.17.3
 	github.com/google/go-cmp v0.7.0
 	github.com/mdlayher/netlink v1.7.2
-	golang.org/x/sync v0.12.0
+	golang.org/x/sync v0.13.0
 	golang.org/x/sys v0.32.0
 )
 
