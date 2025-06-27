@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.8
 
 require (
-	github.com/cilium/ebpf v0.18.0
+	github.com/cilium/ebpf v0.19.0
 	github.com/google/go-cmp v0.7.0
 	github.com/mdlayher/netlink v1.7.2
 	golang.org/x/sync v0.15.0
