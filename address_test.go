@@ -1,13 +1,12 @@
 package rtnetlink
 
 import (
-	"encoding/binary"
 	"net"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jsimonetti/rtnetlink/v2/internal/unix"
-	"github.com/mdlayher/netlink/nlenc"
+	"golang.org/x/sys/cpu"
 )
 
 func TestAddressMessageMarshalBinary(t *testing.T) {
@@ -183,7 +182,7 @@ func TestAddressMessageUnmarshalBinary(t *testing.T) {
 }
 
 func skipBigEndian(t *testing.T) {
-	if nlenc.NativeEndian() == binary.BigEndian {
+	if cpu.IsBigEndian {
 		t.Skip("skipping test on big-endian system")
 	}
 }
