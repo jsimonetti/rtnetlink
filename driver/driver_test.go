@@ -16,7 +16,16 @@ func setupInterface(conn *rtnetlink.Conn, name string, index, master uint32, dri
 	}
 	flag := uint32(unix.IFF_UP)
 	if master > 0 {
-		attrs.Master = &master
+		// Check if this is a VLAN, VXLAN, or MACVLAN interface
+		// These types need the parent interface specified via Type/IFLA_LINK
+		kind := driver.Kind()
+		if kind == "vlan" || kind == "vxlan" || kind == "macvlan" {
+			// For VLAN/VXLAN/MACVLAN, the master parameter is actually the parent link index
+			attrs.Type = master
+		} else {
+			// For other types (like dummy being added to bridge), master is for enslaving
+			attrs.Master = &master
+		}
 		flag = 0
 	}
 	// construct an interface to test drivers

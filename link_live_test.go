@@ -10,8 +10,8 @@ import (
 	"github.com/cilium/ebpf/asm"
 	"github.com/cilium/ebpf/rlimit"
 	"github.com/jsimonetti/rtnetlink/v2/internal/testutils"
+	"github.com/jsimonetti/rtnetlink/v2/internal/unix"
 	"github.com/mdlayher/netlink"
-	"golang.org/x/sys/unix"
 )
 
 // lo accesses the loopback interface present in every network namespace.
@@ -258,5 +258,144 @@ func TestLinkListByKind(t *testing.T) {
 
 	if len(links) > 0 {
 		t.Fatalf("LinkListByKind() found %d links with impossible kind", len(links))
+	}
+}
+
+func TestLinkSetMaster(t *testing.T) {
+	ns := testutils.NetNS(t)
+	conn, err := Dial(&netlink.Config{NetNS: ns})
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer conn.Close()
+
+	const (
+		bridgeIndex = 2001
+		vethIndex   = 2002
+	)
+
+	// Create a bridge
+	err = conn.Link.New(&LinkMessage{
+		Index: bridgeIndex,
+		Attributes: &LinkAttributes{
+			Name: "testbr0",
+			Info: &LinkInfo{
+				Kind: "bridge",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create bridge: %v", err)
+	}
+	defer conn.Link.Delete(bridgeIndex)
+
+	// Create a dummy interface
+	err = conn.Link.New(&LinkMessage{
+		Index: vethIndex,
+		Attributes: &LinkAttributes{
+			Name: "testdum0",
+			Info: &LinkInfo{
+				Kind: "dummy",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create dummy interface: %v", err)
+	}
+	defer conn.Link.Delete(vethIndex)
+
+	// Enslave the dummy to the bridge
+	err = conn.Link.SetMaster(vethIndex, bridgeIndex, nil)
+	if err != nil {
+		t.Fatalf("failed to set master: %v", err)
+	}
+
+	// Verify it's enslaved
+	got, err := conn.Link.Get(vethIndex)
+	if err != nil {
+		t.Fatalf("failed to get link: %v", err)
+	}
+
+	if got.Attributes.Master == nil {
+		t.Fatal("expected Master to be set, got nil")
+	}
+	if *got.Attributes.Master != bridgeIndex {
+		t.Fatalf("unexpected master index:\n got: %d\nwant: %d", *got.Attributes.Master, bridgeIndex)
+	}
+}
+
+func TestLinkRemoveMaster(t *testing.T) {
+	ns := testutils.NetNS(t)
+	conn, err := Dial(&netlink.Config{NetNS: ns})
+	if err != nil {
+		t.Fatalf("failed to dial: %v", err)
+	}
+	defer conn.Close()
+
+	const (
+		bridgeIndex = 2101
+		dummyIndex  = 2102
+	)
+
+	// Create a bridge
+	err = conn.Link.New(&LinkMessage{
+		Index: bridgeIndex,
+		Attributes: &LinkAttributes{
+			Name: "testbr1",
+			Info: &LinkInfo{
+				Kind: "bridge",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create bridge: %v", err)
+	}
+	defer conn.Link.Delete(bridgeIndex)
+
+	// Create a dummy interface
+	err = conn.Link.New(&LinkMessage{
+		Index: dummyIndex,
+		Attributes: &LinkAttributes{
+			Name: "testdum1",
+			Info: &LinkInfo{
+				Kind: "dummy",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to create dummy interface: %v", err)
+	}
+	defer conn.Link.Delete(dummyIndex)
+
+	// Enslave it to the bridge
+	err = conn.Link.SetMaster(dummyIndex, bridgeIndex, nil)
+	if err != nil {
+		t.Fatalf("failed to set master: %v", err)
+	}
+
+	// Verify it's enslaved
+	got, err := conn.Link.Get(dummyIndex)
+	if err != nil {
+		t.Fatalf("failed to get link: %v", err)
+	}
+	if got.Attributes.Master == nil || *got.Attributes.Master != bridgeIndex {
+		t.Fatal("interface was not enslaved")
+	}
+
+	// Remove from master
+	err = conn.Link.RemoveMaster(dummyIndex)
+	if err != nil {
+		t.Fatalf("failed to remove master: %v", err)
+	}
+
+	// Verify it's un-enslaved
+	got, err = conn.Link.Get(dummyIndex)
+	if err != nil {
+		t.Fatalf("failed to get link: %v", err)
+	}
+
+	// Master should be nil or 0
+	if got.Attributes.Master != nil && *got.Attributes.Master != 0 {
+		t.Fatalf("expected Master to be 0 or nil, got %d", *got.Attributes.Master)
 	}
 }
