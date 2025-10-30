@@ -7,7 +7,7 @@ import (
 	"net"
 	"testing"
 
-	"golang.org/x/sys/unix"
+	"github.com/jsimonetti/rtnetlink/v2/internal/unix"
 )
 
 func TestLiveNeighbours(t *testing.T) {

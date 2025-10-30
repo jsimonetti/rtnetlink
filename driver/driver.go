@@ -15,8 +15,13 @@ func init() {
 	for _, drv := range []rtnetlink.LinkDriver{
 		&Bond{},
 		&BondSlave{},
+		&Bridge{},
+		&BridgePort{},
+		&Macvlan{},
 		&Netkit{},
 		&Veth{},
+		&Vlan{},
+		&Vxlan{},
 	} {
 		_ = rtnetlink.RegisterDriver(drv)
 	}
