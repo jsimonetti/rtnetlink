@@ -21,77 +21,77 @@ func TestBridgeEncodeDecode(t *testing.T) {
 		{
 			name: "basic STP configuration",
 			bridge: &Bridge{
-				StpState:     ptrBridgeStpState(BridgeStpStateEnabled),
-				Priority:     ptrUint16(32768),
-				ForwardDelay: ptrUint32(1500),
-				HelloTime:    ptrUint32(200),
-				MaxAge:       ptrUint32(2000),
+				StpState:     ptr(BridgeStpStateEnabled),
+				Priority:     ptr(uint16(32768)),
+				ForwardDelay: ptr(uint32(1500)),
+				HelloTime:    ptr(uint32(200)),
+				MaxAge:       ptr(uint32(2000)),
 			},
 		},
 		{
 			name: "with VLAN filtering",
 			bridge: &Bridge{
-				VlanFiltering:   ptrBridgeEnable(BridgeEnableEnabled),
-				VlanProtocol:    ptrVlanProtocol(VlanProtocol8021Q),
-				VlanDefaultPvid: ptrUint16(1),
+				VlanFiltering:   ptr(BridgeEnableEnabled),
+				VlanProtocol:    ptr(VlanProtocol8021Q),
+				VlanDefaultPvid: ptr(uint16(1)),
 			},
 		},
 		{
 			name: "with multicast settings",
 			bridge: &Bridge{
-				McastSnooping:       ptrBridgeEnable(BridgeEnableEnabled),
-				McastQuerier:        ptrBridgeEnable(BridgeEnableEnabled),
-				McastHashElasticity: ptrUint32(4),
-				McastHashMax:        ptrUint32(512),
-				McastIgmpVersion:    ptrUint8(3),
-				McastMldVersion:     ptrUint8(2),
+				McastSnooping:       ptr(BridgeEnableEnabled),
+				McastQuerier:        ptr(BridgeEnableEnabled),
+				McastHashElasticity: ptr(uint32(4)),
+				McastHashMax:        ptr(uint32(512)),
+				McastIgmpVersion:    ptr(uint8(3)),
+				McastMldVersion:     ptr(uint8(2)),
 			},
 		},
 		{
 			name: "with netfilter settings",
 			bridge: &Bridge{
-				NfCallIptables:  ptrBridgeEnable(BridgeEnableEnabled),
-				NfCallIp6tables: ptrBridgeEnable(BridgeEnableEnabled),
-				NfCallArptables: ptrBridgeEnable(BridgeEnableEnabled),
+				NfCallIptables:  ptr(BridgeEnableEnabled),
+				NfCallIp6tables: ptr(BridgeEnableEnabled),
+				NfCallArptables: ptr(BridgeEnableEnabled),
 			},
 		},
 		{
 			name: "full configuration",
 			bridge: &Bridge{
-				ForwardDelay:            ptrUint32(1500),
-				HelloTime:               ptrUint32(200),
-				MaxAge:                  ptrUint32(2000),
-				AgeingTime:              ptrUint32(30000),
-				StpState:                ptrBridgeStpState(BridgeStpStateEnabled),
-				Priority:                ptrUint16(32768),
-				VlanFiltering:           ptrBridgeEnable(BridgeEnableEnabled),
-				VlanProtocol:            ptrVlanProtocol(VlanProtocol8021Q),
-				GroupFwdMask:            ptrUint16(0),
+				ForwardDelay:            ptr(uint32(1500)),
+				HelloTime:               ptr(uint32(200)),
+				MaxAge:                  ptr(uint32(2000)),
+				AgeingTime:              ptr(uint32(30000)),
+				StpState:                ptr(BridgeStpStateEnabled),
+				Priority:                ptr(uint16(32768)),
+				VlanFiltering:           ptr(BridgeEnableEnabled),
+				VlanProtocol:            ptr(VlanProtocol8021Q),
+				GroupFwdMask:            ptr(uint16(0)),
 				GroupAddr:               net.HardwareAddr{0x01, 0x80, 0xc2, 0x00, 0x00, 0x00},
-				McastRouter:             ptrUint8(1),
-				McastSnooping:           ptrBridgeEnable(BridgeEnableEnabled),
-				McastQueryUseIfaddr:     ptrBridgeEnable(BridgeEnableDisabled),
-				McastQuerier:            ptrBridgeEnable(BridgeEnableEnabled),
-				McastHashElasticity:     ptrUint32(4),
-				McastHashMax:            ptrUint32(512),
-				McastLastMemberCnt:      ptrUint32(2),
-				McastStartupQueryCnt:    ptrUint32(2),
-				McastLastMemberIntvl:    ptrUint64(100),
-				McastMembershipIntvl:    ptrUint64(26000),
-				McastQuerierIntvl:       ptrUint64(25500),
-				McastQueryIntvl:         ptrUint64(12500),
-				McastQueryResponseIntvl: ptrUint64(1000),
-				McastStartupQueryIntvl:  ptrUint64(3125),
-				NfCallIptables:          ptrBridgeEnable(BridgeEnableDisabled),
-				NfCallIp6tables:         ptrBridgeEnable(BridgeEnableDisabled),
-				NfCallArptables:         ptrBridgeEnable(BridgeEnableDisabled),
-				VlanDefaultPvid:         ptrUint16(1),
-				VlanStatsEnabled:        ptrBridgeEnable(BridgeEnableDisabled),
-				McastStatsEnabled:       ptrBridgeEnable(BridgeEnableDisabled),
-				McastIgmpVersion:        ptrUint8(2),
-				McastMldVersion:         ptrUint8(1),
-				VlanStatsPerPort:        ptrBridgeEnable(BridgeEnableDisabled),
-				FdbMaxLearned:           ptrUint32(0),
+				McastRouter:             ptr(uint8(1)),
+				McastSnooping:           ptr(BridgeEnableEnabled),
+				McastQueryUseIfaddr:     ptr(BridgeEnableDisabled),
+				McastQuerier:            ptr(BridgeEnableEnabled),
+				McastHashElasticity:     ptr(uint32(4)),
+				McastHashMax:            ptr(uint32(512)),
+				McastLastMemberCnt:      ptr(uint32(2)),
+				McastStartupQueryCnt:    ptr(uint32(2)),
+				McastLastMemberIntvl:    ptr(uint64(100)),
+				McastMembershipIntvl:    ptr(uint64(26000)),
+				McastQuerierIntvl:       ptr(uint64(25500)),
+				McastQueryIntvl:         ptr(uint64(12500)),
+				McastQueryResponseIntvl: ptr(uint64(1000)),
+				McastStartupQueryIntvl:  ptr(uint64(3125)),
+				NfCallIptables:          ptr(BridgeEnableDisabled),
+				NfCallIp6tables:         ptr(BridgeEnableDisabled),
+				NfCallArptables:         ptr(BridgeEnableDisabled),
+				VlanDefaultPvid:         ptr(uint16(1)),
+				VlanStatsEnabled:        ptr(BridgeEnableDisabled),
+				McastStatsEnabled:       ptr(BridgeEnableDisabled),
+				McastIgmpVersion:        ptr(uint8(2)),
+				McastMldVersion:         ptr(uint8(1)),
+				VlanStatsPerPort:        ptr(BridgeEnableDisabled),
+				FdbMaxLearned:           ptr(uint32(0)),
 			},
 		},
 	}
@@ -194,7 +194,7 @@ func TestBridgeDecodeRaw(t *testing.T) {
 				0x01, 0x00, 0x00, 0x00, // Value: 1
 			},
 			want: &Bridge{
-				StpState: ptrBridgeStpState(BridgeStpStateEnabled),
+				StpState: ptr(BridgeStpStateEnabled),
 			},
 		},
 		{
@@ -206,7 +206,7 @@ func TestBridgeDecodeRaw(t *testing.T) {
 				0x00, 0x00, 0x00, // Padding
 			},
 			want: &Bridge{
-				VlanFiltering: ptrBridgeEnable(BridgeEnableEnabled),
+				VlanFiltering: ptr(BridgeEnableEnabled),
 			},
 		},
 	}
@@ -264,61 +264,61 @@ func TestBridgePortEncodeDecode(t *testing.T) {
 		{
 			name: "basic port configuration",
 			port: &BridgePort{
-				State:    ptrBridgePortState(BridgePortStateForwarding),
-				Priority: ptrUint16(32),
-				Cost:     ptrUint32(100),
+				State:    ptr(BridgePortStateForwarding),
+				Priority: ptr(uint16(32)),
+				Cost:     ptr(uint32(100)),
 			},
 		},
 		{
 			name: "with hairpin and guard",
 			port: &BridgePort{
-				Mode:  ptrBridgeEnable(BridgeEnableEnabled), // Hairpin mode
-				Guard: ptrBridgeEnable(BridgeEnableEnabled), // BPDU guard
+				Mode:  ptr(BridgeEnableEnabled), // Hairpin mode
+				Guard: ptr(BridgeEnableEnabled), // BPDU guard
 			},
 		},
 		{
 			name: "with flood control",
 			port: &BridgePort{
-				Learning:     ptrBridgeEnable(BridgeEnableEnabled),
-				UnicastFlood: ptrBridgeEnable(BridgeEnableEnabled),
-				McastFlood:   ptrBridgeEnable(BridgeEnableEnabled),
-				BcastFlood:   ptrBridgeEnable(BridgeEnableEnabled),
+				Learning:     ptr(BridgeEnableEnabled),
+				UnicastFlood: ptr(BridgeEnableEnabled),
+				McastFlood:   ptr(BridgeEnableEnabled),
+				BcastFlood:   ptr(BridgeEnableEnabled),
 			},
 		},
 		{
 			name: "with proxy ARP and isolation",
 			port: &BridgePort{
-				ProxyArp:     ptrBridgeEnable(BridgeEnableEnabled),
-				ProxyArpWifi: ptrBridgeEnable(BridgeEnableEnabled),
-				Isolated:     ptrBridgeEnable(BridgeEnableEnabled),
+				ProxyArp:     ptr(BridgeEnableEnabled),
+				ProxyArpWifi: ptr(BridgeEnableEnabled),
+				Isolated:     ptr(BridgeEnableEnabled),
 			},
 		},
 		{
 			name: "full configuration",
 			port: &BridgePort{
-				State:             ptrBridgePortState(BridgePortStateForwarding),
-				Priority:          ptrUint16(32),
-				Cost:              ptrUint32(100),
-				Mode:              ptrBridgeEnable(BridgeEnableDisabled),
-				Guard:             ptrBridgeEnable(BridgeEnableDisabled),
-				Protect:           ptrBridgeEnable(BridgeEnableDisabled),
-				FastLeave:         ptrBridgeEnable(BridgeEnableDisabled),
-				Learning:          ptrBridgeEnable(BridgeEnableEnabled),
-				UnicastFlood:      ptrBridgeEnable(BridgeEnableEnabled),
-				ProxyArp:          ptrBridgeEnable(BridgeEnableDisabled),
-				LearningSync:      ptrBridgeEnable(BridgeEnableDisabled),
-				ProxyArpWifi:      ptrBridgeEnable(BridgeEnableDisabled),
-				MulticastRouter:   ptrUint8(1),
-				McastFlood:        ptrBridgeEnable(BridgeEnableEnabled),
-				McastToUcast:      ptrBridgeEnable(BridgeEnableDisabled),
-				VlanTunnel:        ptrBridgeEnable(BridgeEnableDisabled),
-				BcastFlood:        ptrBridgeEnable(BridgeEnableEnabled),
-				GroupFwdMask:      ptrUint16(0),
-				NeighSuppress:     ptrBridgeEnable(BridgeEnableDisabled),
-				Isolated:          ptrBridgeEnable(BridgeEnableDisabled),
-				Locked:            ptrBridgeEnable(BridgeEnableDisabled),
-				Mab:               ptrBridgeEnable(BridgeEnableDisabled),
-				NeighVlanSuppress: ptrBridgeEnable(BridgeEnableDisabled),
+				State:             ptr(BridgePortStateForwarding),
+				Priority:          ptr(uint16(32)),
+				Cost:              ptr(uint32(100)),
+				Mode:              ptr(BridgeEnableDisabled),
+				Guard:             ptr(BridgeEnableDisabled),
+				Protect:           ptr(BridgeEnableDisabled),
+				FastLeave:         ptr(BridgeEnableDisabled),
+				Learning:          ptr(BridgeEnableEnabled),
+				UnicastFlood:      ptr(BridgeEnableEnabled),
+				ProxyArp:          ptr(BridgeEnableDisabled),
+				LearningSync:      ptr(BridgeEnableDisabled),
+				ProxyArpWifi:      ptr(BridgeEnableDisabled),
+				MulticastRouter:   ptr(uint8(1)),
+				McastFlood:        ptr(BridgeEnableEnabled),
+				McastToUcast:      ptr(BridgeEnableDisabled),
+				VlanTunnel:        ptr(BridgeEnableDisabled),
+				BcastFlood:        ptr(BridgeEnableEnabled),
+				GroupFwdMask:      ptr(uint16(0)),
+				NeighSuppress:     ptr(BridgeEnableDisabled),
+				Isolated:          ptr(BridgeEnableDisabled),
+				Locked:            ptr(BridgeEnableDisabled),
+				Mab:               ptr(BridgeEnableDisabled),
+				NeighVlanSuppress: ptr(BridgeEnableDisabled),
 			},
 		},
 	}
@@ -390,7 +390,7 @@ func TestBridgePortDecodeRaw(t *testing.T) {
 				0x00, 0x00, 0x00, // Padding
 			},
 			want: &BridgePort{
-				State: ptrBridgePortState(BridgePortStateForwarding),
+				State: ptr(BridgePortStateForwarding),
 			},
 		},
 		{
@@ -401,7 +401,7 @@ func TestBridgePortDecodeRaw(t *testing.T) {
 				0x64, 0x00, 0x00, 0x00, // Value: 100
 			},
 			want: &BridgePort{
-				Cost: ptrUint32(100),
+				Cost: ptr(uint32(100)),
 			},
 		},
 	}
@@ -425,35 +425,7 @@ func TestBridgePortDecodeRaw(t *testing.T) {
 	}
 }
 
-// Helper functions for creating pointers
-func ptrUint8(v uint8) *uint8 {
-	return &v
-}
-
-func ptrUint16(v uint16) *uint16 {
-	return &v
-}
-
-func ptrUint32(v uint32) *uint32 {
-	return &v
-}
-
-func ptrUint64(v uint64) *uint64 {
-	return &v
-}
-
-func ptrBridgeStpState(s BridgeStpState) *BridgeStpState {
-	return &s
-}
-
-func ptrBridgeEnable(e BridgeEnable) *BridgeEnable {
-	return &e
-}
-
-func ptrVlanProtocol(p VlanProtocol) *VlanProtocol {
-	return &p
-}
-
-func ptrBridgePortState(s BridgePortState) *BridgePortState {
-	return &s
+// ptr is a generic helper function for creating a pointer to an arbitrary type.
+func ptr[T any](t T) *T {
+	return &t
 }
