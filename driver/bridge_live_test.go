@@ -178,7 +178,7 @@ func TestBridgePort(t *testing.T) {
 			name: "port with cost and priority",
 			conn: conn,
 			driver: &Bridge{
-				StpState: ptrBridgeStpState(BridgeStpStateEnabled),
+				StpState: ptr(BridgeStpStateEnabled),
 			},
 			portCfg: &BridgePort{
 				Priority: &u1632,
@@ -197,7 +197,7 @@ func TestBridgePort(t *testing.T) {
 			name: "port with hairpin mode",
 			conn: connNS,
 			driver: &Bridge{
-				StpState: ptrBridgeStpState(BridgeStpStateEnabled),
+				StpState: ptr(BridgeStpStateEnabled),
 			},
 			portCfg: &BridgePort{
 				Mode: &enabled,
@@ -215,7 +215,7 @@ func TestBridgePort(t *testing.T) {
 			name: "port with learning and flooding",
 			conn: connNS,
 			driver: &Bridge{
-				StpState: ptrBridgeStpState(BridgeStpStateEnabled),
+				StpState: ptr(BridgeStpStateEnabled),
 			},
 			portCfg: &BridgePort{
 				Learning:     &enabled,
