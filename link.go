@@ -126,8 +126,10 @@ func (l *LinkService) execute(m Message, family uint16, flags netlink.HeaderFlag
 	msgs, err := l.c.Execute(m, family, flags)
 
 	links := make([]LinkMessage, len(msgs))
-	for i := range msgs {
-		links[i] = *msgs[i].(*LinkMessage)
+	for i, msg := range msgs {
+		if link, ok := msg.(*LinkMessage); ok {
+			links[i] = *link
+		}
 	}
 
 	return links, err

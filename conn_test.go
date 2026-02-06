@@ -138,24 +138,33 @@ func TestConnReceive(t *testing.T) {
 				0x02, 0x01, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04,
 			},
 		},
+		{
+			Header: netlink.Header{
+				Type:     netlink.Error,
+				Sequence: 1,
+				PID:      1,
+			},
+			Data: make([]byte, 4),
+		},
 	}
 
 	wantnl := tc.receive
-	wantrt := []LinkMessage{
-		{
+	wantrt := []Message{
+		&LinkMessage{
 			Family: 0x0,
 			Type:   0x0,
 			Index:  0x0,
 			Flags:  0x0,
 			Change: 0x0,
 		},
-		{
+		&LinkMessage{
 			Family: 0x102,
 			Type:   0x0,
 			Index:  0x4030201,
 			Flags:  0x102,
 			Change: 0x4030201,
 		},
+		nil,
 	}
 
 	rtmsgs, nlmsgs, err := c.Receive()
@@ -163,18 +172,12 @@ func TestConnReceive(t *testing.T) {
 		t.Fatalf("failed to receive messages: %v", err)
 	}
 
-	links := make([]LinkMessage, 0, len(rtmsgs))
-	for _, m := range rtmsgs {
-		link := (m).(*LinkMessage)
-		links = append(links, *link)
-	}
-
 	if want, got := wantnl, nlmsgs; !reflect.DeepEqual(want, got) {
 		t.Fatalf("unexpected netlink.Messages from Conn.Receive:\n- want: %#v\n-  got: %#v",
 			want, got)
 	}
 
-	if want, got := wantrt, links; !reflect.DeepEqual(want, got) {
+	if want, got := wantrt, rtmsgs; !reflect.DeepEqual(want, got) {
 		t.Fatalf("unexpected Messages from Conn.Receive:\n- want: %#v\n-  got: %#v",
 			want, got)
 	}
