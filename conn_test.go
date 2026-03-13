@@ -216,6 +216,8 @@ func (c *noopConn) Send(_ netlink.Message) (netlink.Message, error)      { retur
 func (c *noopConn) Receive() ([]netlink.Message, error)                  { return nil, nil }
 func (c *noopConn) Execute(m netlink.Message) ([]netlink.Message, error) { return nil, nil }
 func (c *noopConn) SetOption(_ netlink.ConnOption, _ bool) error         { return nil }
+func (c *noopConn) JoinGroup(_ uint32) error                             { return nil }
+func (c *noopConn) LeaveGroup(_ uint32) error                            { return nil }
 func (c *noopConn) SetReadDeadline(t time.Time) error                    { return nil }
 
 func mustMarshal(m encoding.BinaryMarshaler) []byte {
