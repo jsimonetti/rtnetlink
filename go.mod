@@ -12,5 +12,5 @@ require (
 
 require (
 	github.com/mdlayher/socket v0.5.1 // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 )
