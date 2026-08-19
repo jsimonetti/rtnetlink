@@ -206,6 +206,7 @@ const (
 	IFLA_CARRIER_CHANGES                       = 0x23
 	IFLA_CARRIER_UP_COUNT                      = 0x2f
 	IFLA_CARRIER_DOWN_COUNT                    = 0x30
+	IFLA_PERM_ADDRESS                          = 0x36
 	IFLA_PHYS_PORT_ID                          = 0x22
 	IFLA_PHYS_SWITCH_ID                        = 0x24
 	IFLA_PHYS_PORT_NAME                        = 0x26
