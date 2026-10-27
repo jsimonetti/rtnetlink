@@ -230,7 +230,7 @@ func TestVlanDecodeRaw(t *testing.T) {
 			data: func() []byte {
 				ae := netlink.NewAttributeEncoder()
 				ae.Uint16(unix.IFLA_VLAN_ID, 100)
-				ae.Uint16(unix.IFLA_VLAN_PROTOCOL, uint16(VlanProtocol8021Q))
+				ae.Bytes(unix.IFLA_VLAN_PROTOCOL, []byte{0x81, 0x00})
 				b, _ := ae.Encode()
 				return b
 			}(),

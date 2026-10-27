@@ -190,7 +190,7 @@ func (b *Bridge) Encode(ae *netlink.AttributeEncoder) error {
 		ae.Uint8(unix.IFLA_BR_VLAN_FILTERING, uint8(*b.VlanFiltering))
 	}
 	if b.VlanProtocol != nil {
-		ae.Uint16(unix.IFLA_BR_VLAN_PROTOCOL, uint16(*b.VlanProtocol))
+		b.VlanProtocol.encode(ae, unix.IFLA_BR_VLAN_PROTOCOL)
 	}
 	if b.GroupFwdMask != nil {
 		ae.Uint16(unix.IFLA_BR_GROUP_FWD_MASK, *b.GroupFwdMask)
@@ -302,7 +302,7 @@ func (b *Bridge) Decode(ad *netlink.AttributeDecoder) error {
 			v := BridgeEnable(ad.Uint8())
 			b.VlanFiltering = &v
 		case unix.IFLA_BR_VLAN_PROTOCOL:
-			v := VlanProtocol(ad.Uint16())
+			v := decodeVlanProtocol(ad)
 			b.VlanProtocol = &v
 		case unix.IFLA_BR_GROUP_FWD_MASK:
 			v := ad.Uint16()
