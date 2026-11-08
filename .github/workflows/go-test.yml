@@ -71,7 +71,7 @@ jobs:
       id: go
 
     - name: Install QEMU user emulation
-      run: sudo apt-get update && sudo apt-get install -y qemu-user-static
+      run: sudo apt-get update && sudo apt-get install -y qemu-user
 
     - name: Checkout code
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -85,7 +85,7 @@ jobs:
     # Runs the fixture tests only. The integration tests need root and a real
     # big-endian kernel, which QEMU user emulation does not provide.
     - name: Test
-      run: go test -exec qemu-s390x-static ./...
+      run: go test -exec qemu-s390x ./...
   govuln_check:
     name: Check for vulnerabilities
     strategy:
