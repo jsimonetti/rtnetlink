@@ -314,6 +314,55 @@ func TestRouteMessageMarshalRoundTrip(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "single-path RTA_VIA, IPv4 dst via IPv6 next-hop",
+			m: &RouteMessage{
+				Family:    unix.AF_INET,
+				DstLength: 32,
+				Type:      unix.RTN_UNICAST,
+				Attributes: RouteAttributes{
+					Dst:      net.IPv4(10, 0, 0, 1),
+					OutIface: 2,
+					Via: &RouteVia{
+						Family: unix.AF_INET6,
+						Addr:   net.ParseIP("fe80::1"),
+					},
+				},
+			},
+		},
+		{
+			name: "multipath RTA_VIA, IPv4 dst via IPv6 next-hops (ECMP)",
+			m: &RouteMessage{
+				Family:    unix.AF_INET,
+				DstLength: 32,
+				Type:      unix.RTN_UNICAST,
+				Attributes: RouteAttributes{
+					Dst: net.IPv4(10, 0, 0, 1),
+					Multipath: []NextHop{
+						{
+							Hop: RTNextHop{
+								Length:  32,
+								IfIndex: 1,
+							},
+							Via: &RouteVia{
+								Family: unix.AF_INET6,
+								Addr:   net.ParseIP("fe80::1"),
+							},
+						},
+						{
+							Hop: RTNextHop{
+								Length:  32,
+								IfIndex: 2,
+							},
+							Via: &RouteVia{
+								Family: unix.AF_INET6,
+								Addr:   net.ParseIP("fe80::2"),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -345,6 +394,42 @@ func TestRouteMessageMarshalRoundTrip(t *testing.T) {
 				t.Fatalf("unexpected final raw byte output (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestRouteViaEncodeDecode(t *testing.T) {
+	skipBigEndian(t)
+
+	via := &RouteVia{
+		Family: unix.AF_INET6,
+		Addr:   net.ParseIP("fe80::1"),
+	}
+
+	b, err := via.encode()
+	if err != nil {
+		t.Fatalf("failed to encode RouteVia: %v", err)
+	}
+
+	// struct rtvia: 2-byte family (native endian) followed by the address bytes.
+	want := append([]byte{unix.AF_INET6, 0x00}, net.ParseIP("fe80::1").To16()...)
+	if diff := cmp.Diff(want, b); diff != "" {
+		t.Fatalf("unexpected encoded RouteVia bytes (-want +got):\n%s", diff)
+	}
+
+	var got RouteVia
+	if err := got.decode(b); err != nil {
+		t.Fatalf("failed to decode RouteVia: %v", err)
+	}
+
+	if diff := cmp.Diff(via, &got); diff != "" {
+		t.Fatalf("unexpected decoded RouteVia (-want +got):\n%s", diff)
+	}
+}
+
+func TestRouteViaDecodeTooShort(t *testing.T) {
+	var via RouteVia
+	if err := via.decode([]byte{0x0a}); err == nil {
+		t.Fatal("expected error decoding RouteVia from too-short buffer, got nil")
 	}
 }
 

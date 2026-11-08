@@ -5,18 +5,18 @@ jobs:
     name: Test MacOS
     strategy:
       matrix:
-        go-version: [1.25.x, 1.26.x]
+        go-version: [1.26.x, 1.27.x]
         platform: [macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Install Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: ${{ matrix.go-version }}
       id: go
 
     - name: Checkout code
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Download dependencies
       run: go mod download
@@ -33,18 +33,18 @@ jobs:
     name: Test Linux Integration
     strategy:
       matrix:
-        go-version: [1.25.x, 1.26.x]
+        go-version: [1.26.x, 1.27.x]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Install Go
-      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: ${{ matrix.go-version }}
       id: go
 
     - name: Checkout code
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Download dependencies
       run: go mod download
@@ -57,17 +57,46 @@ jobs:
 
     - name: Test Integration
       run: sudo -E env PATH=$PATH go test -v -tags=integration ./...
+  big_endian_test:
+    name: Test big-endian (s390x under QEMU)
+    runs-on: ubuntu-latest
+    env:
+      GOARCH: s390x
+      CGO_ENABLED: "0"
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: 1.27.x
+      id: go
+
+    - name: Install QEMU user emulation
+      run: sudo apt-get update && sudo apt-get install -y qemu-user
+
+    - name: Checkout code
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Go Vet
+      run: go vet ./...
+
+    # Runs the fixture tests only. The integration tests need root and a real
+    # big-endian kernel, which QEMU user emulation does not provide.
+    - name: Test
+      run: go test -exec qemu-s390x ./...
   govuln_check:
     name: Check for vulnerabilities
     strategy:
       matrix:
-        go-version: [1.25.x, 1.26.x]
+        go-version: [1.26.x, 1.27.x]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     steps:
     - name: Check for vulnerabilities
       id: govulncheck
-      uses: golang/govulncheck-action@b625fbe08f3bccbe446d94fbf87fcc875a4f50ee
+      uses: golang/govulncheck-action@032d45514ae346b1db93c04b0c90b841c370344f
       with:
         cache: false
         go-version-input: ${{ matrix.go-version }}

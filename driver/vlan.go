@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"encoding/binary"
 	"fmt"
 
 	"github.com/jsimonetti/rtnetlink/v2"
@@ -15,10 +16,10 @@ type VlanProtocol uint16
 // VLAN protocols.
 const (
 	// VlanProtocol8021Q represents 802.1Q VLAN tagging (standard VLAN).
-	VlanProtocol8021Q VlanProtocol = 0x0081
+	VlanProtocol8021Q VlanProtocol = 0x8100
 
 	// VlanProtocol8021AD represents 802.1ad QinQ (VLAN stacking).
-	VlanProtocol8021AD VlanProtocol = 0xA888
+	VlanProtocol8021AD VlanProtocol = 0x88A8
 )
 
 // String returns a string representation of the VlanProtocol.
@@ -31,6 +32,23 @@ func (p VlanProtocol) String() string {
 	default:
 		return fmt.Sprintf("unknown VlanProtocol value (0x%x)", uint16(p))
 	}
+}
+
+// VLAN protocol payloads use network byte order even though the surrounding
+// attributes use native byte order.
+func (p VlanProtocol) encode(ae *netlink.AttributeEncoder, typ uint16) {
+	order := ae.ByteOrder
+	ae.ByteOrder = binary.BigEndian
+	ae.Uint16(typ, uint16(p))
+	ae.ByteOrder = order
+}
+
+func decodeVlanProtocol(ad *netlink.AttributeDecoder) VlanProtocol {
+	order := ad.ByteOrder
+	ad.ByteOrder = binary.BigEndian
+	protocol := VlanProtocol(ad.Uint16())
+	ad.ByteOrder = order
+	return protocol
 }
 
 // VlanFlag represents VLAN flags.
@@ -88,7 +106,7 @@ func (v *Vlan) Encode(ae *netlink.AttributeEncoder) error {
 	}
 
 	if v.Protocol != nil {
-		ae.Uint16(unix.IFLA_VLAN_PROTOCOL, uint16(*v.Protocol))
+		v.Protocol.encode(ae, unix.IFLA_VLAN_PROTOCOL)
 	}
 
 	if v.Flags != nil {
@@ -138,7 +156,7 @@ func (v *Vlan) Decode(ad *netlink.AttributeDecoder) error {
 			v.ID = &id
 
 		case unix.IFLA_VLAN_PROTOCOL:
-			protocol := VlanProtocol(ad.Uint16())
+			protocol := decodeVlanProtocol(ad)
 			v.Protocol = &protocol
 
 		case unix.IFLA_VLAN_FLAGS:

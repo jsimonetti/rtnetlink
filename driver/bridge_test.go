@@ -1,6 +1,7 @@
 package driver
 
 import (
+	"encoding/binary"
 	"net"
 	"testing"
 
@@ -188,23 +189,14 @@ func TestBridgeDecodeRaw(t *testing.T) {
 	}{
 		{
 			name: "STP state",
-			b: []byte{
-				0x08, 0x00, // Length: 8
-				unix.IFLA_BR_STP_STATE, 0x00, // Type: IFLA_BR_STP_STATE
-				0x01, 0x00, 0x00, 0x00, // Value: 1
-			},
+			b:    rawBridgeAttribute(unix.IFLA_BR_STP_STATE, binary.NativeEndian.AppendUint32(nil, 1)),
 			want: &Bridge{
 				StpState: ptr(BridgeStpStateEnabled),
 			},
 		},
 		{
 			name: "VLAN filtering",
-			b: []byte{
-				0x05, 0x00, // Length: 5
-				unix.IFLA_BR_VLAN_FILTERING, 0x00, // Type: IFLA_BR_VLAN_FILTERING
-				0x01,             // Value: 1
-				0x00, 0x00, 0x00, // Padding
-			},
+			b:    rawBridgeAttribute(unix.IFLA_BR_VLAN_FILTERING, []byte{1}),
 			want: &Bridge{
 				VlanFiltering: ptr(BridgeEnableEnabled),
 			},
@@ -383,23 +375,14 @@ func TestBridgePortDecodeRaw(t *testing.T) {
 	}{
 		{
 			name: "port state",
-			b: []byte{
-				0x05, 0x00, // Length: 5
-				unix.IFLA_BRPORT_STATE, 0x00, // Type: IFLA_BRPORT_STATE
-				0x03,             // Value: 3 (forwarding)
-				0x00, 0x00, 0x00, // Padding
-			},
+			b:    rawBridgeAttribute(unix.IFLA_BRPORT_STATE, []byte{3}),
 			want: &BridgePort{
 				State: ptr(BridgePortStateForwarding),
 			},
 		},
 		{
 			name: "port cost",
-			b: []byte{
-				0x08, 0x00, // Length: 8
-				unix.IFLA_BRPORT_COST, 0x00, // Type: IFLA_BRPORT_COST
-				0x64, 0x00, 0x00, 0x00, // Value: 100
-			},
+			b:    rawBridgeAttribute(unix.IFLA_BRPORT_COST, binary.NativeEndian.AppendUint32(nil, 100)),
 			want: &BridgePort{
 				Cost: ptr(uint32(100)),
 			},
@@ -428,4 +411,15 @@ func TestBridgePortDecodeRaw(t *testing.T) {
 // ptr is a generic helper function for creating a pointer to an arbitrary type.
 func ptr[T any](t T) *T {
 	return &t
+}
+
+// rawBridgeAttribute builds a native-endian netlink header around a raw payload.
+func rawBridgeAttribute(typ uint16, payload []byte) []byte {
+	b := binary.NativeEndian.AppendUint16(nil, uint16(4+len(payload)))
+	b = binary.NativeEndian.AppendUint16(b, typ)
+	b = append(b, payload...)
+	for len(b)%4 != 0 {
+		b = append(b, 0)
+	}
+	return b
 }

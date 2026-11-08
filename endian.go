@@ -1,13 +1,7 @@
 package rtnetlink
 
-import (
-	"encoding/binary"
+import "encoding/binary"
 
-	"github.com/mdlayher/netlink/nlenc"
-)
-
-var nativeEndian binary.ByteOrder
-
-func init() {
-	nativeEndian = nlenc.NativeEndian()
-}
+// nativeEndian is the byte order of the host, which netlink uses for most
+// attribute and header fields.
+var nativeEndian binary.ByteOrder = binary.NativeEndian

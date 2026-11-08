@@ -1,16 +1,16 @@
 module github.com/jsimonetti/rtnetlink/v2
 
-go 1.25.0
+go 1.26.0
 
 require (
-	github.com/cilium/ebpf v0.21.0
+	github.com/cilium/ebpf v0.22.0
 	github.com/google/go-cmp v0.7.0
 	github.com/mdlayher/netlink v1.11.2
-	golang.org/x/sync v0.21.0
-	golang.org/x/sys v0.46.0
+	golang.org/x/sync v0.24.0
+	golang.org/x/sys v0.49.0
 )
 
 require (
 	github.com/mdlayher/socket v0.6.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 )
