@@ -40,6 +40,9 @@ const (
 	IFA_MULTICAST                              = linux.IFA_MULTICAST
 	IFA_FLAGS                                  = linux.IFA_FLAGS
 	IFA_RT_PRIORITY                            = linux.IFA_RT_PRIORITY
+	IFA_F_NODAD                                = linux.IFA_F_NODAD
+	IFA_F_DEPRECATED                           = linux.IFA_F_DEPRECATED
+	IFA_F_PERMANENT                            = linux.IFA_F_PERMANENT
 	IFF_UP                                     = linux.IFF_UP
 	IFF_BROADCAST                              = linux.IFF_BROADCAST
 	IFF_LOOPBACK                               = linux.IFF_LOOPBACK

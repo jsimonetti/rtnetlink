@@ -208,6 +208,9 @@ func (a *AddressAttributes) encode(ae *netlink.AttributeEncoder) error {
 	if a.Label != "" {
 		ae.String(unix.IFA_LABEL, a.Label)
 	}
+	if a.CacheInfo != (CacheInfo{}) {
+		ae.Do(unix.IFA_CACHEINFO, a.CacheInfo.encode)
+	}
 	ae.Uint32(unix.IFA_FLAGS, a.Flags)
 	if a.Priority != 0 {
 		ae.Uint32(unix.IFA_RT_PRIORITY, a.Priority)
@@ -216,7 +219,16 @@ func (a *AddressAttributes) encode(ae *netlink.AttributeEncoder) error {
 	return nil
 }
 
-// CacheInfo contains address information
+// CacheInfo contains address information.
+//
+// When adding or replacing an address, Preferred and Valid set the
+// preferred and valid lifetimes of the address in seconds, with 0xffffffff
+// meaning infinite; Created and Updated are ignored by the kernel. The
+// attribute is only sent when CacheInfo is not the zero value; otherwise the
+// kernel assigns infinite lifetimes.
+//
+// For IPv6, a preferred lifetime of zero marks the address as deprecated, so
+// that it is not selected as a source address for new outgoing connections.
 type CacheInfo struct {
 	Preferred uint32
 	Valid     uint32
@@ -236,6 +248,18 @@ func (c *CacheInfo) decode(b []byte) error {
 	c.Updated = nativeEndian.Uint32(b[12:16])
 
 	return nil
+}
+
+// encode encodes a CacheInfo's fields into raw bytes.
+func (c *CacheInfo) encode() ([]byte, error) {
+	b := make([]byte, 16)
+
+	nativeEndian.PutUint32(b[0:4], c.Preferred)
+	nativeEndian.PutUint32(b[4:8], c.Valid)
+	nativeEndian.PutUint32(b[8:12], c.Created)
+	nativeEndian.PutUint32(b[12:16], c.Updated)
+
+	return b, nil
 }
 
 // encodeIP is a helper for validating and encoding IPv4 and IPv6 addresses as

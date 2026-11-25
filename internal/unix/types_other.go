@@ -36,6 +36,9 @@ const (
 	IFA_MULTICAST                              = 0x7
 	IFA_FLAGS                                  = 0x8
 	IFA_RT_PRIORITY                            = 0x9
+	IFA_F_NODAD                                = 0x2
+	IFA_F_DEPRECATED                           = 0x20
+	IFA_F_PERMANENT                            = 0x80
 	IFF_UP                                     = 0x1
 	IFF_BROADCAST                              = 0x2
 	IFF_LOOPBACK                               = 0x8
